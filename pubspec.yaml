@@ -12,11 +12,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5
   dio: ^5.9.0
-  just_audio: ^0.10.5
   cached_network_image: ^3.4.1
   shared_preferences: ^2.5.3
   crypto: ^3.0.6
   dynamic_color: ^2.1.0
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:

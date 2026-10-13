@@ -102,11 +102,11 @@ class MiniPlayer extends StatelessWidget {
                     ),
                     // 播放进度细条
                     StreamBuilder<Duration>(
-                      stream: player.player.positionStream,
+                      stream: player.positionStream,
                       builder: (context, snapshot) {
                         final pos = snapshot.data ?? Duration.zero;
                         final total =
-                            player.player.duration ?? Duration.zero;
+                            player.duration ?? Duration.zero;
                         final ratio = total.inMilliseconds > 0
                             ? pos.inMilliseconds /
                                 total.inMilliseconds

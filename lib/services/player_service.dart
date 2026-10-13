@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import '../models/models.dart';
 import 'music_service.dart';
@@ -21,8 +21,14 @@ const Map<String, String> qualityLevels = {
 /// 一轮都播不了时给出提示而不是死循环。
 class PlayerService extends ChangeNotifier {
   final MusicService music;
-  final AudioPlayer player = AudioPlayer();
+  final AudioPlayer _player = AudioPlayer();
   final Random _random = Random();
+
+  // audioplayers 是事件驱动：用本地字段缓存播放状态/进度/时长，
+  // 对外保持原来的同步 getter 接口。
+  bool _playing = false;
+  Duration _position = Duration.zero;
+  Duration? _duration;
 
   List<Song> queue = [];
   int index = -1;
@@ -39,20 +45,31 @@ class PlayerService extends ChangeNotifier {
   bool _busy = false;
 
   PlayerService(this.music) {
-    player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        _onCompleted();
-      }
+    _player.onPlayerStateChanged.listen((state) {
+      _playing = state == PlayerState.playing;
+      notifyListeners();
+    });
+    _player.onPlayerComplete.listen((_) => _onCompleted());
+    _player.onDurationChanged.listen((d) {
+      _duration = d;
       notifyListeners();
     });
     // 进度变化时刷新歌词高亮 / 进度条
-    player.positionStream.listen((_) => notifyListeners());
+    _player.onPositionChanged.listen((pos) {
+      _position = pos;
+      notifyListeners();
+    });
   }
 
   Song? get current =>
       (index >= 0 && index < queue.length) ? queue[index] : null;
   bool get hasQueue => queue.isNotEmpty;
-  bool get playing => player.playing;
+  bool get playing => _playing;
+  Duration get position => _position;
+  Duration? get duration => _duration;
+  Stream<Duration> get positionStream => _player.onPositionChanged;
+  Stream<bool> get playingStream =>
+      _player.onPlayerStateChanged.map((s) => s == PlayerState.playing);
   String get qualityLabel => qualityLevels[quality] ?? '标准';
 
   String get modeLabel => switch (mode) {
@@ -92,7 +109,7 @@ class PlayerService extends ChangeNotifier {
     if (i == index) {
       if (queue.isEmpty) {
         index = -1;
-        player.stop();
+        _player.stop();
       } else {
         _playAt(i % queue.length);
       }
@@ -105,7 +122,7 @@ class PlayerService extends ChangeNotifier {
   void clearQueue() {
     queue = [];
     index = -1;
-    player.stop();
+    _player.stop();
     notifyListeners();
   }
 
@@ -145,8 +162,7 @@ class PlayerService extends ChangeNotifier {
           continue;
         }
         try {
-          await player.setUrl(url);
-          await player.play();
+          await _player.play(UrlSource(url));
           errorMessage = null;
           notifyListeners();
           return;
@@ -182,8 +198,8 @@ class PlayerService extends ChangeNotifier {
 
   Future<void> _onCompleted() async {
     if (mode == PlayMode.single && current != null) {
-      await player.seek(Duration.zero);
-      await player.play();
+      await _player.seek(Duration.zero);
+      await _player.resume();
     } else {
       await next();
     }
@@ -192,13 +208,13 @@ class PlayerService extends ChangeNotifier {
   // ---------- 播放控制 ----------
 
   Future<void> toggle() async {
-    if (player.playing) {
-      await player.pause();
+    if (_playing) {
+      await _player.pause();
     } else {
       if (index < 0 && queue.isNotEmpty) {
         await _playAt(0);
       } else {
-        await player.play();
+        await _player.resume();
       }
     }
     notifyListeners();
@@ -212,16 +228,16 @@ class PlayerService extends ChangeNotifier {
   Future<void> prev() async {
     if (queue.isEmpty) return;
     // 播放超过 3 秒时回到开头，否则上一首
-    if (player.position.inSeconds > 3) {
-      await player.seek(Duration.zero);
+    if (_position.inSeconds > 3) {
+      await _player.seek(Duration.zero);
       return;
     }
     await _playAt(_prevIndex(index));
   }
 
-  Future<void> seek(Duration position) => player.seek(position);
+  Future<void> seek(Duration position) => _player.seek(position);
 
-  Future<void> setVolume(double v) => player.setVolume(v.clamp(0.0, 1.0));
+  Future<void> setVolume(double v) => _player.setVolume(v.clamp(0.0, 1.0));
 
   void cycleMode() {
     mode = switch (mode) {
@@ -241,11 +257,11 @@ class PlayerService extends ChangeNotifier {
     }
     quality = level;
     _failed.remove(current!.id);
-    final pos = player.position;
+    final pos = _position;
     await _playAt(index);
     // 尽量恢复到切换前的位置
-    if (player.duration != null && pos < player.duration!) {
-      await player.seek(pos);
+    if (_duration != null && pos < _duration!) {
+      await _player.seek(pos);
     }
     notifyListeners();
   }
@@ -301,7 +317,7 @@ class PlayerService extends ChangeNotifier {
 
   @override
   void dispose() {
-    player.dispose();
+    _player.dispose();
     super.dispose();
   }
 }

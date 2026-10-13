@@ -171,10 +171,10 @@ class PlayerScreen extends StatelessWidget {
 
   Widget _buildProgress(PlayerService player) {
     return StreamBuilder<Duration>(
-      stream: player.player.positionStream,
+      stream: player.positionStream,
       builder: (context, snapshot) {
         final pos = snapshot.data ?? Duration.zero;
-        final total = player.player.duration ?? Duration.zero;
+        final total = player.duration ?? Duration.zero;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
@@ -322,11 +322,10 @@ class _DiscViewState extends State<_DiscView>
     if (playing) _controller.repeat();
     _sub = context
         .read<PlayerService>()
-        .player
-        .playerStateStream
-        .listen((state) {
+        .playingStream
+        .listen((playing) {
       if (!mounted) return;
-      if (state.playing) {
+      if (playing) {
         if (!_controller.isAnimating) _controller.repeat();
       } else {
         _controller.stop();
@@ -434,7 +433,7 @@ class _LyricViewState extends State<_LyricView> {
           );
         }
         return StreamBuilder<Duration>(
-          stream: player.player.positionStream,
+          stream: player.positionStream,
           builder: (context, snapshot) {
             final pos = snapshot.data ?? Duration.zero;
             final current = player.lyricIndexAt(pos);
