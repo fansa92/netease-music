@@ -165,6 +165,14 @@ jobs:
           # 取消可能被 hold 的包
           sudo apt-mark unhold libunwind8 libunwind-dev \
             libgstreamer1.0-0 libgstreamer1.0-dev 2>/dev/null || true
+          # libunwind-dev 与 runner 预装包冲突导致 apt 无解：
+          # 用 equivs 建空包满足依赖（构建实际不需要 libunwind 头文件）
+          sudo apt-get install -y equivs
+          mkdir -p /tmp/dummy && cd /tmp/dummy
+          printf 'Section: libdevel\nPriority: optional\nStandards-Version: 3.9.2\nPackage: libunwind-dev\nVersion: 1.3.2-2build2\nArchitecture: all\nDescription: Dummy libunwind-dev to satisfy gstreamer deps\n' > libunwind-dev
+          equivs-build libunwind-dev
+          sudo dpkg -i libunwind-dev_1.3.2-2build2_all.deb
+          cd -
           sudo apt-get install -y --allow-downgrades \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
