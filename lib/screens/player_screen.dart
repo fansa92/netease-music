@@ -276,39 +276,57 @@ class PlayerScreen extends StatelessWidget {
   }
 
   /// Apple Music 风格进度条：细滑杆，左已播 / 右剩余（负数）
+  /// [waveform] 为 true 时显示波浪形进度条
   Widget _buildProgress(PlayerService player) {
+    final waveform =
+        context.select<SettingsService, bool>((s) => s.waveformProgress);
     return StreamBuilder<Duration>(
       stream: player.positionStream,
       builder: (context, snapshot) {
         final pos = snapshot.data ?? Duration.zero;
         final total = player.duration ?? Duration.zero;
         final remain = total - pos;
+        final progress = total.inMilliseconds > 0
+            ? pos.inMilliseconds.clamp(0, total.inMilliseconds) /
+                total.inMilliseconds
+            : 0.0;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 4,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 6),
-                  overlayShape:
-                      const RoundSliderOverlayShape(overlayRadius: 12),
-                  activeTrackColor: Colors.white70,
-                  inactiveTrackColor: Colors.white24,
-                  thumbColor: Colors.white,
-                  overlayColor: Colors.white24,
+              if (waveform)
+                _WaveformProgress(
+                  progress: progress,
+                  songId: player.current?.id ?? 0,
+                  onSeek: (p) => player.seek(Duration(
+                      milliseconds:
+                          (p * total.inMilliseconds).toInt())),
+                )
+              else
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    thumbShape:
+                        const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    overlayShape:
+                        const RoundSliderOverlayShape(overlayRadius: 12),
+                    activeTrackColor: Colors.white70,
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: Colors.white,
+                    overlayColor: Colors.white24,
+                  ),
+                  child: Slider(
+                    value: pos.inMilliseconds
+                        .clamp(0, total.inMilliseconds)
+                        .toDouble(),
+                    max: (total.inMilliseconds > 0
+                            ? total.inMilliseconds
+                            : 1)
+                        .toDouble(),
+                    onChanged: (v) =>
+                        player.seek(Duration(milliseconds: v.toInt())),
+                  ),
                 ),
-                child: Slider(
-                  value: pos.inMilliseconds
-                      .clamp(0, total.inMilliseconds)
-                      .toDouble(),
-                  max: (total.inMilliseconds > 0 ? total.inMilliseconds : 1)
-                      .toDouble(),
-                  onChanged: (v) =>
-                      player.seek(Duration(milliseconds: v.toInt())),
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(
@@ -618,6 +636,105 @@ class _VolumeRowState extends State<_VolumeRow> {
       ),
     );
   }
+}
+
+/// 波浪形进度条：根据歌曲 ID 生成固定的波形，点击/拖动跳转
+class _WaveformProgress extends StatelessWidget {
+  final double progress; // 0.0 - 1.0
+  final int songId;
+  final ValueChanged<double> onSeek;
+  const _WaveformProgress({
+    required this.progress,
+    required this.songId,
+    required this.onSeek,
+  });
+
+  /// 根据歌曲 ID 生成确定性波形高度（0.2 - 1.0）
+  List<double> _heights(int count) {
+    final heights = <double>[];
+    var seed = songId;
+    for (var i = 0; i < count; i++) {
+      // 简单的 LCG 伪随机，保证同一首歌波形一致
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      heights.add(0.25 + 0.75 * ((seed % 100) / 100));
+    }
+    return heights;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onHorizontalDragUpdate: (d) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box == null) return;
+        final pos = d.localPosition.dx / box.size.width;
+        onSeek(pos.clamp(0.0, 1.0));
+      },
+      onTapUp: (d) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box == null) return;
+        final pos = d.localPosition.dx / box.size.width;
+        onSeek(pos.clamp(0.0, 1.0));
+      },
+      child: SizedBox(
+        height: 48,
+        child: CustomPaint(
+          painter: _WaveformPainter(
+            progress: progress.clamp(0.0, 1.0),
+            heights: _heights(64),
+            playedColor: cs.primary,
+            unplayedColor: Colors.white24,
+          ),
+          size: Size.infinite,
+        ),
+      ),
+    );
+  }
+}
+
+class _WaveformPainter extends CustomPainter {
+  final double progress;
+  final List<double> heights;
+  final Color playedColor;
+  final Color unplayedColor;
+
+  _WaveformPainter({
+    required this.progress,
+    required this.heights,
+    required this.playedColor,
+    required this.unplayedColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final count = heights.length;
+    final barWidth = size.width / count;
+    final playedCount = (progress * count).floor();
+
+    for (var i = 0; i < count; i++) {
+      final h = heights[i] * size.height;
+      final x = i * barWidth + barWidth * 0.25;
+      final w = barWidth * 0.5;
+      final y = (size.height - h) / 2;
+      final paint = Paint()
+        ..color = i < playedCount ? playedColor : unplayedColor
+        ..style = PaintingStyle.fill;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, y, w, h),
+          const Radius.circular(2),
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_WaveformPainter old) =>
+      old.progress != progress ||
+      old.playedColor != playedColor ||
+      old.unplayedColor != unplayedColor;
 }
 
 /// 同步歌词视图

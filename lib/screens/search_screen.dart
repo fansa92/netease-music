@@ -126,8 +126,10 @@ class _SearchScreenState extends State<SearchScreen>
         actions: [
           TextButton(
             onPressed: () => _submit(_controller.text),
-            child: const Text('搜索',
-                style: TextStyle(color: Colors.white, fontSize: 15)),
+            child: Text('搜索',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 15)),
           ),
         ],
       ),

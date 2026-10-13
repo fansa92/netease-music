@@ -147,10 +147,15 @@ class PlayerService extends ChangeNotifier {
         _loadLyrics(song.id);
 
         String? url;
-        try {
-          url = await music.songUrl(song.id, level: quality);
-        } catch (_) {
-          url = null;
+        // 优先用预加载的 URL
+        if (_urlCache.containsKey(song.id)) {
+          url = _urlCache.remove(song.id);
+        } else {
+          try {
+            url = await music.songUrl(song.id, level: quality);
+          } catch (_) {
+            url = null;
+          }
         }
         if (url == null || url.isEmpty) {
           // 接口没返回播放链接：未登录 / 无版权 / 需 VIP
@@ -165,6 +170,8 @@ class PlayerService extends ChangeNotifier {
           await _player.play(UrlSource(url));
           errorMessage = null;
           notifyListeners();
+          // 预加载下一首的 URL，切歌时更快
+          _prefetchNext(n);
           return;
         } catch (e) {
           // 链接拿到了，但播放器加载失败：和"暂无版权"区分开
@@ -187,6 +194,23 @@ class PlayerService extends ChangeNotifier {
     if (mode == PlayMode.shuffle) return _random.nextInt(queue.length);
     final n = from + 1;
     return n >= queue.length ? 0 : n;
+  }
+
+  /// URL 缓存：预加载下一首，切歌时直接用
+  final Map<int, String> _urlCache = {};
+
+  /// 后台预加载下一首的播放 URL（不阻塞当前播放）
+  void _prefetchNext(int currentIndex) {
+    if (queue.isEmpty) return;
+    final nextIdx = _nextIndex(currentIndex);
+    if (nextIdx == currentIndex) return;
+    final song = queue[nextIdx];
+    if (_failed.contains(song.id) || _urlCache.containsKey(song.id)) return;
+    music.songUrl(song.id, level: quality).then((url) {
+      if (url != null && url.isNotEmpty) {
+        _urlCache[song.id] = url;
+      }
+    }).catchError((_) {});
   }
 
   int _prevIndex(int from) {

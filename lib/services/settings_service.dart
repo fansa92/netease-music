@@ -12,6 +12,7 @@ class SettingsService extends ChangeNotifier {
   static const _keyThemeMode = 'theme_mode';
   static const _keyPureBlack = 'pure_black';
   static const _keyCustomColors = 'custom_colors';
+  static const _keyWaveformProgress = 'waveform_progress';
 
   /// 预设主题色
   static const List<ThemePreset> themePresets = [
@@ -45,6 +46,10 @@ class SettingsService extends ChangeNotifier {
   /// 用户自定义主题色（ARGB int 列表）
   List<int> _customColors = [];
   List<int> get customColors => List.unmodifiable(_customColors);
+
+  /// 波浪形进度条（播放器进度条显示为波形样式）
+  bool _waveformProgress = false;
+  bool get waveformProgress => _waveformProgress;
 
   /// M3 动态取色（跟随系统壁纸，Android 12+ 有效），默认开启
   bool _dynamicColor = true;
@@ -85,6 +90,7 @@ class SettingsService extends ChangeNotifier {
     _pureBlack = _prefs.getBool(_keyPureBlack) ?? false;
     _customColors =
         _prefs.getStringList(_keyCustomColors)?.map(int.parse).toList() ?? [];
+    _waveformProgress = _prefs.getBool(_keyWaveformProgress) ?? false;
   }
 
   /// 通过系统 CorePalette 取种子色，M3 明暗主题分别用 fromSeed 生成
@@ -153,6 +159,13 @@ class SettingsService extends ChangeNotifier {
       await setThemeSeed(defaultThemeSeed);
       return;
     }
+    notifyListeners();
+  }
+
+  Future<void> setWaveformProgress(bool value) async {
+    if (value == _waveformProgress) return;
+    _waveformProgress = value;
+    await _prefs.setBool(_keyWaveformProgress, value);
     notifyListeners();
   }
 

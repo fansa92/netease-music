@@ -15,6 +15,7 @@ class NowPlayingService {
   final PlayerService player;
   StreamSubscription? _posSub;
   Timer? _debounce;
+  Timer? _heartbeat;
   int? _lastSongId;
 
   NowPlayingService(this.player) {
@@ -23,6 +24,10 @@ class NowPlayingService {
     player.addListener(_onPlayerChanged);
     // 进度变化时节流更新（锁屏进度条）
     _posSub = player.positionStream.listen((_) => _scheduleUpdate());
+    // 心跳：播放中每 5 秒重新断言一次，防止系统清除后不恢复
+    _heartbeat = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (player.playing && player.current != null) _update();
+    });
     _onPlayerChanged();
   }
 
@@ -44,7 +49,8 @@ class NowPlayingService {
 
   void _scheduleUpdate() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 2), _update);
+    // 1 秒节流，保证锁屏进度条与 App 内基本同步
+    _debounce = Timer(const Duration(seconds: 1), _update);
   }
 
   Future<void> _update() async {
@@ -101,6 +107,7 @@ class NowPlayingService {
   void dispose() {
     _posSub?.cancel();
     _debounce?.cancel();
+    _heartbeat?.cancel();
     player.removeListener(_onPlayerChanged);
   }
 }

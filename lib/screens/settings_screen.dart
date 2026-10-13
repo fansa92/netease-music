@@ -143,6 +143,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: AppColors.textSecondary),
             onTap: () => Navigator.pushNamed(context, '/theme'),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('波浪形进度条'),
+            subtitle: const Text('播放器进度条显示为波形样式',
+                style: TextStyle(
+                    fontSize: 12, color: AppColors.textSecondary)),
+            value: settings.waveformProgress,
+            onChanged: (v) =>
+                context.read<SettingsService>().setWaveformProgress(v),
+          ),
           const Divider(height: 48),
           Text('关于',
               style: Theme.of(context)

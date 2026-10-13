@@ -80,20 +80,20 @@ class MiniPlayer extends StatelessWidget {
                                         ? Icons.pause
                                         : Icons.play_arrow,
                                     size: 24,
-                                    color: Colors.white,
+                                    color: cs.onPrimary,
                                   ),
                                 ),
                               ),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.skip_next,
-                                color: Colors.white70),
+                            icon: Icon(Icons.skip_next,
+                                color: cs.onSurfaceVariant),
                             onPressed: player.next,
                           ),
                           IconButton(
-                            icon: const Icon(Icons.queue_music,
-                                color: Colors.white70),
+                            icon: Icon(Icons.queue_music,
+                                color: cs.onSurfaceVariant),
                             onPressed: () => _showQueue(context, player),
                           ),
                           const SizedBox(width: 4),
@@ -195,7 +195,7 @@ class QueueSheet extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
+                          color: isCurrent ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       subtitle: Text(

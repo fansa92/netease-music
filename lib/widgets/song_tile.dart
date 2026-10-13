@@ -62,7 +62,7 @@ class SongTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 15,
-                color: highlight ? Theme.of(context).colorScheme.primary : Colors.white,
+                color: highlight ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
