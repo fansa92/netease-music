@@ -130,8 +130,8 @@ if (intOf(d['code'])!= 200) throw Exception('操作失败');
 
 Future<SearchResult> search(String keywords, int type,
 {int limit = 30, int offset = 0}) async {
-// 歌曲搜索用 /cloudsearch：/search 返回的 album 对象没有 picUrl，封面显示不了
-final endpoint = type == 1 ? '/cloudsearch' : '/search';
+// 歌曲和播客搜索用 /cloudsearch：/search 返回的 album 对象没有 picUrl，封面显示不了
+final endpoint = (type == 1 || type == 1009) ? '/cloudsearch' : '/search';
 final d = await api.get(endpoint, {
 'keywords': keywords,
 'type': type,
@@ -144,6 +144,7 @@ List<Song> songs = [];
 List<Playlist> playlists = [];
 List<ArtistMini> artists = [];
 List<AlbumMini> albums = [];
+List<DjRadio> djRadios = [];
 final s = r['songs'];
 if (s is List) {
 songs = s.whereType<Map<String, dynamic>>().map(Song.fromJson).toList();
@@ -163,11 +164,22 @@ if (ab is List) {
 albums =
 ab.whereType<Map<String, dynamic>>().map(AlbumMini.fromJson).toList();
 }
+final dj = r['djRadios'];
+if (dj is List) {
+djRadios =
+dj.whereType<Map<String, dynamic>>().map(DjRadio.fromJson).toList();
+}
 final songCount = intOf(r['songCount']);
+final djRadioCount = intOf(r['djRadiosCount']);
 // /cloudsearch 不返回 hasMore，用总数推算
-final hasMore = type == 1
-? offset + songs.length < songCount
-: r['hasMore'] == true;
+bool hasMore;
+if (type == 1) {
+  hasMore = offset + songs.length < songCount;
+} else if (type == 1009) {
+  hasMore = offset + djRadios.length < djRadioCount;
+} else {
+  hasMore = r['hasMore'] == true;
+}
 return SearchResult(
 songs: songs,
 songCount: songCount,
@@ -177,6 +189,8 @@ artists: artists,
 artistCount: intOf(r['artistCount']),
 albums: albums,
 albumCount: intOf(r['albumCount']),
+djRadios: djRadios,
+djRadioCount: djRadioCount,
 hasMore: hasMore,
 );
 }

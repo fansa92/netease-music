@@ -4,13 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api.dart';
 
-/// 应用设置：目前管理「接口地址」，持久化到 SharedPreferences，
-/// 修改后立即作用到 [ApiClient]，无需重启。
+/// 应用设置：接口地址 / 主题模式 / 主题色，持久化到 SharedPreferences。
 class SettingsService extends ChangeNotifier {
   static const _keyApiBaseUrl = 'api_base_url';
   static const _keyDynamicColor = 'dynamic_color';
   static const _keyThemeSeed = 'theme_seed';
-  static const _keyBlogUrl = 'blog_url';
+  static const _keyThemeMode = 'theme_mode';
+  static const _keyPureBlack = 'pure_black';
+  static const _keyCustomColors = 'custom_colors';
 
   /// 预设主题色
   static const List<ThemePreset> themePresets = [
@@ -33,38 +34,42 @@ class SettingsService extends ChangeNotifier {
   String get apiBaseUrl => _apiBaseUrl;
   bool get isDefault => _apiBaseUrl == ApiClient.defaultBaseUrl;
 
-  /// 博客地址（侧栏「博客」页面加载的 URL）
-  String _blogUrl = '';
-  String get blogUrl => _blogUrl;
+  /// 主题模式：跟随系统 / 浅色 / 深色（参考 Bettbox）
+  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
+
+  /// 纯黑模式（深色下背景全黑，AMOLED 省电）
+  bool _pureBlack = false;
+  bool get pureBlack => _pureBlack;
+
+  /// 用户自定义主题色（ARGB int 列表）
+  List<int> _customColors = [];
+  List<int> get customColors => List.unmodifiable(_customColors);
 
   /// M3 动态取色（跟随系统壁纸，Android 12+ 有效），默认开启
   bool _dynamicColor = true;
   bool get dynamicColor => _dynamicColor;
 
-  /// 从系统取到的动态配色；不支持或未取到时为 null
-  ColorScheme? _systemScheme;
-  ColorScheme? get systemScheme => _systemScheme;
+  /// 从系统取到的动态种子色；不支持或未取到时为 null
+  Color? _systemSeedColor;
+  Color? get systemSeedColor => _systemSeedColor;
 
-  /// 当前生效的配色：动态取色开且系统支持时用系统色，
-  /// 否则用用户选的主题色（默认网易云红时返回 null，走默认配色）
-  ColorScheme? get effectiveScheme {
-    if (_dynamicColor && _systemScheme != null) return _systemScheme;
-    if (_themeSeed != defaultThemeSeed) {
-      return ColorScheme.fromSeed(
-        seedColor: Color(_themeSeed),
-        brightness: Brightness.dark,
-      );
-    }
-    return null;
+  /// 当前生效的种子色：动态取色开且系统支持时用系统色，否则用用户选的主题色
+  Color get effectiveSeedColor {
+    if (_dynamicColor && _systemSeedColor != null) return _systemSeedColor!;
+    return Color(_themeSeed);
   }
 
   /// 主题色（ARGB int），默认网易云红
   int _themeSeed = defaultThemeSeed;
   int get themeSeed => _themeSeed;
-  String get themeName => themePresets
-      .firstWhere((p) => p.value == _themeSeed,
-          orElse: () => themePresets.first)
-      .name;
+  String get themeName {
+    for (final p in themePresets) {
+      if (p.value == _themeSeed) return p.name;
+    }
+    if (_customColors.contains(_themeSeed)) return '自定义';
+    return '网易云红';
+  }
 
   SettingsService(this._api);
 
@@ -73,23 +78,24 @@ class SettingsService extends ChangeNotifier {
     _apiBaseUrl = _prefs.getString(_keyApiBaseUrl) ?? ApiClient.defaultBaseUrl;
     _api.setBaseUrl(_apiBaseUrl);
     _themeSeed = _prefs.getInt(_keyThemeSeed) ?? defaultThemeSeed;
-    _blogUrl = _prefs.getString(_keyBlogUrl) ?? '';
     _dynamicColor = _prefs.getBool(_keyDynamicColor) ?? true;
     if (_dynamicColor) await _loadSystemScheme();
+    final modeIndex = _prefs.getInt(_keyThemeMode) ?? ThemeMode.system.index;
+    _themeMode = ThemeMode.values[modeIndex.clamp(0, 2)];
+    _pureBlack = _prefs.getBool(_keyPureBlack) ?? false;
+    _customColors =
+        _prefs.getStringList(_keyCustomColors)?.map(int.parse).toList() ?? [];
   }
 
-  /// 通过系统 CorePalette 生成 M3 深色动态配色
+  /// 通过系统 CorePalette 取种子色，M3 明暗主题分别用 fromSeed 生成
   Future<void> _loadSystemScheme() async {
     try {
       final palette = await DynamicColorPlugin.getCorePalette();
       if (palette != null) {
-        _systemScheme = ColorScheme.fromSeed(
-          seedColor: Color(palette.primary.get(40)),
-          brightness: Brightness.dark,
-        );
+        _systemSeedColor = Color(palette.primary.get(40));
       }
     } catch (_) {
-      _systemScheme = null;
+      _systemSeedColor = null;
     }
   }
 
@@ -115,11 +121,53 @@ class SettingsService extends ChangeNotifier {
 
   Future<void> resetApiBaseUrl() => setApiBaseUrl(ApiClient.defaultBaseUrl);
 
-  Future<void> setBlogUrl(String url) async {
-    url = url.trim();
-    if (url == _blogUrl) return;
-    _blogUrl = url;
-    await _prefs.setString(_keyBlogUrl, url);
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (mode == _themeMode) return;
+    _themeMode = mode;
+    await _prefs.setInt(_keyThemeMode, mode.index);
+    notifyListeners();
+  }
+
+  Future<void> setPureBlack(bool value) async {
+    if (value == _pureBlack) return;
+    _pureBlack = value;
+    await _prefs.setBool(_keyPureBlack, value);
+    notifyListeners();
+  }
+
+  Future<void> addCustomColor(int value) async {
+    if (_customColors.contains(value)) return;
+    _customColors = [..._customColors, value];
+    await _prefs.setStringList(
+        _keyCustomColors, _customColors.map((e) => e.toString()).toList());
+    notifyListeners();
+  }
+
+  Future<void> removeCustomColor(int value) async {
+    if (!_customColors.contains(value)) return;
+    _customColors = _customColors.where((e) => e != value).toList();
+    await _prefs.setStringList(
+        _keyCustomColors, _customColors.map((e) => e.toString()).toList());
+    // 如果删的是当前选中的颜色，回退到默认
+    if (_themeSeed == value) {
+      await setThemeSeed(defaultThemeSeed);
+      return;
+    }
+    notifyListeners();
+  }
+
+  Future<void> resetTheme() async {
+    _themeSeed = defaultThemeSeed;
+    _dynamicColor = true;
+    _themeMode = ThemeMode.system;
+    _pureBlack = false;
+    _customColors = [];
+    await _prefs.setInt(_keyThemeSeed, _themeSeed);
+    await _prefs.setBool(_keyDynamicColor, true);
+    await _prefs.setInt(_keyThemeMode, _themeMode.index);
+    await _prefs.setBool(_keyPureBlack, false);
+    await _prefs.setStringList(_keyCustomColors, []);
+    await _loadSystemScheme();
     notifyListeners();
   }
 
@@ -127,7 +175,7 @@ class SettingsService extends ChangeNotifier {
     if (value == _dynamicColor) return;
     _dynamicColor = value;
     await _prefs.setBool(_keyDynamicColor, value);
-    if (value && _systemScheme == null) await _loadSystemScheme();
+    if (value && _systemSeedColor == null) await _loadSystemScheme();
     notifyListeners();
   }
 

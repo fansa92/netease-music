@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:volume_controller/volume_controller.dart';
 
 import '../core/theme.dart';
 import '../models/models.dart';
@@ -10,6 +12,10 @@ import '../services/music_service.dart';
 import '../services/player_service.dart';
 import '../widgets/cover_image.dart';
 import '../widgets/mini_player.dart';
+
+/// 是否桌面端（Windows/macOS/Linux）
+bool get _isDesktop =>
+    Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
 /// 全屏播放器：Apple Music 风格
 /// 方形大封面 / 左对齐歌名歌手 / 细进度条 / 大按钮 / 音量条 / 同步歌词
@@ -63,7 +69,10 @@ class PlayerScreen extends StatelessWidget {
                     Expanded(
                       child: PageView(
                         children: [
-                          _ArtworkView(song: song),
+                          // 封面页支持下滑手势关闭（仅移动端）
+                          _SwipeDismiss(
+                            child: _ArtworkView(song: song),
+                          ),
                           const _LyricView(),
                         ],
                       ),
@@ -72,7 +81,8 @@ class PlayerScreen extends StatelessWidget {
                     _buildTitleRow(context, player, song),
                     _buildProgress(player),
                     _buildControls(context, player),
-                    _VolumeRow(player: player),
+                    // 桌面端不显示音量控制
+                    if (!_isDesktop) _VolumeRow(player: player),
                     const SizedBox(height: 8),
                   ],
                 ),
@@ -476,6 +486,34 @@ class PlayerScreen extends StatelessWidget {
       };
 }
 
+/// 下滑手势关闭（仅移动端）：在封面上快速下滑或下滑超过阈值时关闭播放页
+class _SwipeDismiss extends StatelessWidget {
+  final Widget child;
+  const _SwipeDismiss({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isDesktop) return child;
+    double dragDistance = 0;
+    return GestureDetector(
+      onVerticalDragUpdate: (details) {
+        // 只统计向下的拖动
+        if (details.delta.dy > 0) dragDistance += details.delta.dy;
+      },
+      onVerticalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        // 快速下滑（速度 > 600）或下滑距离超过 120 时关闭
+        if (velocity > 600 || dragDistance > 120) {
+          Navigator.pop(context);
+        }
+        dragDistance = 0;
+      },
+      onVerticalDragCancel: () => dragDistance = 0,
+      child: child,
+    );
+  }
+}
+
 /// Apple Music 风格方形大封面：圆角 + 阴影
 class _ArtworkView extends StatelessWidget {
   final Song song;
@@ -512,7 +550,7 @@ class _ArtworkView extends StatelessWidget {
   }
 }
 
-/// 音量条（Apple Music 风格：喇叭图标 + 细滑杆）
+/// 音量条（仅移动端）：与系统音量同步
 class _VolumeRow extends StatefulWidget {
   final PlayerService player;
   const _VolumeRow({required this.player});
@@ -523,6 +561,33 @@ class _VolumeRow extends StatefulWidget {
 
 class _VolumeRowState extends State<_VolumeRow> {
   double _volume = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVolume();
+  }
+
+  Future<void> _initVolume() async {
+    try {
+      final v = await VolumeController.instance.getVolume();
+      if (mounted) setState(() => _volume = v.clamp(0.0, 1.0));
+      // 监听系统音量变化（音量键/控制中心），保持同步
+      VolumeController.instance.listener((v) {
+        if (mounted) setState(() => _volume = v.clamp(0.0, 1.0));
+      });
+    } catch (_) {
+      // 不支持的平台忽略
+    }
+  }
+
+  @override
+  void dispose() {
+    try {
+      VolumeController.instance.removeListener();
+    } catch (_) {}
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -548,7 +613,8 @@ class _VolumeRowState extends State<_VolumeRow> {
                 value: _volume,
                 onChanged: (v) {
                   setState(() => _volume = v);
-                  widget.player.setVolume(v);
+                  // 直接设置系统音量
+                  VolumeController.instance.setVolume(v);
                 },
               ),
             ),

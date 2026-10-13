@@ -6,7 +6,6 @@ import 'core/theme.dart';
 import 'models/models.dart';
 import 'screens/album_detail_screen.dart';
 import 'screens/artist_detail_screen.dart';
-import 'screens/blog_screen.dart';
 import 'screens/comments_screen.dart';
 import 'screens/dj_detail_screen.dart';
 import 'screens/dj_screen.dart';
@@ -61,13 +60,19 @@ class NeteaseMusicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // M3 动态取色：SettingsService 在 Android 12+ 上从系统壁纸取色，
-    // 不可用或关闭时 buildTheme 用默认网易云红配色
+    // M3 主题：主题模式（跟随系统/浅色/深色）+ 动态取色/种子色 + 纯黑模式
     final settings = context.watch<SettingsService>();
+    final seedColor = settings.effectiveSeedColor;
     return MaterialApp(
       title: '云音乐',
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(dynamicScheme: settings.effectiveScheme),
+      themeMode: settings.themeMode,
+      theme: buildTheme(brightness: Brightness.light, seedColor: seedColor),
+      darkTheme: buildTheme(
+        brightness: Brightness.dark,
+        seedColor: seedColor,
+        pureBlack: settings.pureBlack,
+      ),
       home: const AppShell(),
       onGenerateRoute: (settings) {
         final args = settings.arguments;
@@ -160,7 +165,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;
 
-  final _tabs = const [HomeScreen(), DjScreen(), SearchScreen(), BlogScreen(), UserScreen()];
+  final _tabs = const [HomeScreen(), DjScreen(), SearchScreen(), UserScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -191,11 +196,6 @@ class _AppShellState extends State<AppShell> {
                       icon: Icon(Icons.search_outlined),
                       selectedIcon: Icon(Icons.search),
                       label: Text('搜索'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.rss_feed_outlined),
-                      selectedIcon: Icon(Icons.rss_feed),
-                      label: Text('博客'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline),
@@ -249,11 +249,6 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.search_outlined),
                 selectedIcon: Icon(Icons.search),
                 label: '搜索',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.rss_feed_outlined),
-                selectedIcon: Icon(Icons.rss_feed),
-                label: '博客',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline),

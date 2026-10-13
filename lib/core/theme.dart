@@ -8,42 +8,96 @@ class AppColors {
   static const textSecondary = Color(0xFF9A9BA0);
 }
 
-/// 默认深色 M3 配色（网易云红品牌色；动态取色不可用或关闭时使用）
-const _defaultDarkScheme = ColorScheme.dark(
-  primary: AppColors.primary,
-  onPrimary: Colors.white,
-  primaryContainer: Color(0xFF7A231D),
-  onPrimaryContainer: Color(0xFFFFDAD6),
-  surface: AppColors.bg,
-  surfaceContainerLowest: Color(0xFF0E0F12),
-  surfaceContainerLow: AppColors.bg,
-  surfaceContainer: Color(0xFF1B1C21),
-  surfaceContainerHigh: Color(0xFF232429),
-  surfaceContainerHighest: AppColors.divider,
-);
+/// 深色 M3 配色（默认网易云红；[seedColor] 指定时用种子色生成）
+ColorScheme _darkScheme({Color? seedColor, bool pureBlack = false}) {
+  final base = seedColor == null
+      ? const ColorScheme.dark(
+          primary: AppColors.primary,
+          onPrimary: Colors.white,
+          primaryContainer: Color(0xFF7A231D),
+          onPrimaryContainer: Color(0xFFFFDAD6),
+        )
+      : ColorScheme.fromSeed(
+          seedColor: seedColor,
+          brightness: Brightness.dark,
+        );
+  if (!pureBlack) {
+    return base.copyWith(
+      surface: AppColors.bg,
+      surfaceContainerLowest: const Color(0xFF0E0F12),
+      surfaceContainerLow: AppColors.bg,
+      surfaceContainer: const Color(0xFF1B1C21),
+      surfaceContainerHigh: const Color(0xFF232429),
+      surfaceContainerHighest: AppColors.divider,
+    );
+  }
+  // 纯黑模式（AMOLED）：背景全黑
+  return base.copyWith(
+    surface: Colors.black,
+    surfaceContainerLowest: Colors.black,
+    surfaceContainerLow: Colors.black,
+    surfaceContainer: const Color(0xFF0A0A0A),
+    surfaceContainerHigh: const Color(0xFF141414),
+    surfaceContainerHighest: const Color(0xFF1E1E1E),
+  );
+}
 
-/// 构建深色 M3 主题。
-/// [dynamicScheme] 为系统动态取色（Android 12+ 壁纸取色），提供时优先使用。
-ThemeData buildTheme({ColorScheme? dynamicScheme}) {
-  // M3 tonal 配色（参考 Border-Player 的质感风格： tonal 容器 + 大圆角）
-  final scheme = dynamicScheme ?? _defaultDarkScheme;
+/// 浅色 M3 配色
+ColorScheme _lightScheme({Color? seedColor}) {
+  if (seedColor == null) {
+    return const ColorScheme.light(
+      primary: AppColors.primary,
+      onPrimary: Colors.white,
+      primaryContainer: Color(0xFFFFDAD6),
+      onPrimaryContainer: Color(0xFF7A231D),
+    );
+  }
+  return ColorScheme.fromSeed(
+    seedColor: seedColor,
+    brightness: Brightness.light,
+  );
+}
+
+/// 构建 M3 主题。
+/// [brightness] 明暗，[seedColor] 主题种子色，
+/// [pureBlack] 深色下是否纯黑背景。
+ThemeData buildTheme({
+  required Brightness brightness,
+  Color? seedColor,
+  bool pureBlack = false,
+}) {
+  final isDark = brightness == Brightness.dark;
+  final ColorScheme scheme;
+  if (isDark) {
+    scheme = _darkScheme(seedColor: seedColor, pureBlack: pureBlack);
+  } else {
+    scheme = _lightScheme(seedColor: seedColor);
+  }
+
+  final bg = isDark
+      ? (pureBlack ? Colors.black : AppColors.bg)
+      : scheme.surface;
+  final cardColor =
+      isDark ? (pureBlack ? const Color(0xFF0A0A0A) : AppColors.card) : scheme.surfaceContainerHigh;
+
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.bg,
+    brightness: brightness,
+    scaffoldBackgroundColor: bg,
     colorScheme: scheme,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.bg,
+    appBarTheme: AppBarTheme(
+      backgroundColor: bg,
       elevation: 0,
       centerTitle: true,
       titleTextStyle: TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: scheme.onSurface,
       ),
+      iconTheme: IconThemeData(color: scheme.onSurface),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.bg,
+      backgroundColor: bg,
       elevation: 8,
       indicatorColor: scheme.primary.withValues(alpha: 0.25),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -59,35 +113,35 @@ ThemeData buildTheme({ColorScheme? dynamicScheme}) {
         return IconThemeData(color: selected ? scheme.primary : Colors.grey);
       }),
     ),
-    cardTheme: const CardThemeData(
-      color: AppColors.card,
+    cardTheme: CardThemeData(
+      color: cardColor,
       margin: EdgeInsets.zero,
     ),
-    dividerTheme: const DividerThemeData(
-      color: AppColors.divider,
+    dividerTheme: DividerThemeData(
+      color: isDark ? AppColors.divider : scheme.outlineVariant,
       thickness: 0.5,
       space: 0,
     ),
     sliderTheme: SliderThemeData(
-      activeTrackColor: AppColors.primary,
-      inactiveTrackColor: Colors.white24,
-      thumbColor: AppColors.primary,
-      overlayColor: AppColors.primary.withValues(alpha: 0.2),
+      activeTrackColor: scheme.primary,
+      inactiveTrackColor: scheme.onSurface.withValues(alpha: 0.24),
+      thumbColor: scheme.primary,
+      overlayColor: scheme.primary.withValues(alpha: 0.2),
       trackHeight: 3,
       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.primary,
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: scheme.primary,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.card,
+      fillColor: cardColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+      hintStyle: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
     ),
     snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
   );

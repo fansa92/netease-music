@@ -32,8 +32,8 @@ class _SearchScreenState extends State<SearchScreen>
   String _submitted = '';
 
   late TabController _tabController;
-  final _tabs = const ['单曲', '歌单', '专辑', '歌手'];
-  final _types = const [1, 1000, 10, 100];
+  final _tabs = const ['单曲', '歌单', '专辑', '歌手', '播客'];
+  final _types = const [1, 1000, 10, 100, 1009];
 
   @override
   void initState() {
@@ -306,7 +306,7 @@ class _SearchScreenState extends State<SearchScreen>
           child: TabBarView(
             controller: _tabController,
             children: List.generate(
-              4,
+              5,
               (i) => _ResultTab(
                 key: ValueKey('$_submitted-$i'),
                 keywords: _submitted,
@@ -386,6 +386,9 @@ class _ResultTabState extends State<_ResultTab> {
         case 100:
           page = r.artists;
           _total = r.artistCount;
+        case 1009:
+          page = r.djRadios;
+          _total = r.djRadioCount;
       }
       setState(() {
         _items.addAll(page);
@@ -513,6 +516,25 @@ class _ResultTabState extends State<_ResultTab> {
             color: AppColors.textSecondary),
         onTap: () =>
             Navigator.pushNamed(context, '/artist', arguments: item.id),
+      );
+    }
+    if (item is DjRadio) {
+      return ListTile(
+        leading: CoverImage(url: item.picUrl, size: 52, radius: 8),
+        title: Text(item.name,
+            maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+            item.desc.isNotEmpty
+                ? item.desc
+                : '${item.programCount}期节目',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style:
+                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        trailing: const Icon(Icons.chevron_right,
+            color: AppColors.textSecondary),
+        onTap: () =>
+            Navigator.pushNamed(context, '/dj', arguments: item.id),
       );
     }
     return const SizedBox.shrink();

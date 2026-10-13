@@ -15,7 +15,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _controller;
-  late final TextEditingController _blogController;
   String? _error;
 
   @override
@@ -23,13 +22,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final settings = context.read<SettingsService>();
     _controller = TextEditingController(text: settings.apiBaseUrl);
-    _blogController = TextEditingController(text: settings.blogUrl);
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _blogController.dispose();
     super.dispose();
   }
 
@@ -115,36 +112,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             '默认：${ApiClient.defaultBaseUrl}',
             style: const TextStyle(
                 fontSize: 12, color: AppColors.textSecondary),
-          ),
-          const Divider(height: 48),
-          Text('博客',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(color: cs.primary)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _blogController,
-            keyboardType: TextInputType.url,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              hintText: 'https://你的博客地址',
-              prefixIcon: Icon(Icons.rss_feed_outlined),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              await context
-                  .read<SettingsService>()
-                  .setBlogUrl(_blogController.text);
-              messenger.showSnackBar(
-                const SnackBar(content: Text('博客地址已保存')),
-              );
-            },
-            child: const Text('保存博客地址'),
           ),
           const Divider(height: 48),
           Text('外观',

@@ -106,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
               slivers: [
                 _buildHeader(context),
                 SliverToBoxAdapter(child: _BannerCarousel(banners: data.banners)),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
                 SliverToBoxAdapter(child: _buildNavRow(context)),
                 SliverToBoxAdapter(
                   child: SectionHeader(

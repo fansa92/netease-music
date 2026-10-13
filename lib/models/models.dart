@@ -324,6 +324,8 @@ class SearchResult {
   final int artistCount;
   final List<AlbumMini> albums;
   final int albumCount;
+  final List<DjRadio> djRadios;
+  final int djRadioCount;
   final bool hasMore;
 
   const SearchResult({
@@ -335,6 +337,8 @@ class SearchResult {
     this.artistCount = 0,
     this.albums = const [],
     this.albumCount = 0,
+    this.djRadios = const [],
+    this.djRadioCount = 0,
     this.hasMore = false,
   });
 }
