@@ -53,14 +53,41 @@ class SongTile extends StatelessWidget {
                   ),
                 )
               : null,
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 15,
-          color: highlight ? Theme.of(context).colorScheme.primary : Colors.white,
-        ),
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                color: highlight ? Theme.of(context).colorScheme.primary : Colors.white,
+              ),
+            ),
+          ),
+          if (song.isVip) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'VIP',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
       subtitle: Text(
         '${song.artistNames} - ${song.albumName}',

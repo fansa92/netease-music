@@ -76,6 +76,8 @@ class Song {
       artists.isEmpty ? '未知艺人' : artists.map((a) => a.name).join('/');
   String get picUrl => album?.picUrl ?? '';
   String get albumName => album?.name ?? '';
+  /// VIP 歌曲标识（fee == 1）
+  bool get isVip => fee == 1;
 
   /// 兼容多种接口返回结构：
   /// - /playlist/track/all、/song/detail、/search、/artists：ar / al / dt
@@ -441,4 +443,84 @@ class ArtistDetail {
       hotSongs: hotSongs,
     );
   }
+}
+
+/// 播客电台
+class DjRadio {
+  final int id;
+  final String name;
+  final String picUrl;
+  final String desc;
+  final int programCount;
+  final int playCount;
+
+  const DjRadio({
+    required this.id,
+    required this.name,
+    this.picUrl = '',
+    this.desc = '',
+    this.programCount = 0,
+    this.playCount = 0,
+  });
+
+  factory DjRadio.fromJson(Map<String, dynamic> json) {
+    return DjRadio(
+      id: intOf(json['id']),
+      name: '${json['name'] ?? ''}',
+      picUrl: httpsUrl(json['picUrl'] as String?),
+      desc: '${json['copywriter'] ?? json['desc'] ?? ''}',
+      programCount: intOf(json['programCount']),
+      playCount: intOf(json['playCount'] ?? json['subCount']),
+    );
+  }
+}
+
+/// 播客节目
+class DjProgram {
+  final int id;
+  final String name;
+  final String coverUrl;
+  final String desc;
+  final int duration; // 毫秒
+  final int mainSongId;
+  final String radioName;
+  final String djName;
+  final int listenerCount;
+
+  const DjProgram({
+    required this.id,
+    required this.name,
+    this.coverUrl = '',
+    this.desc = '',
+    this.duration = 0,
+    this.mainSongId = 0,
+    this.radioName = '',
+    this.djName = '',
+    this.listenerCount = 0,
+  });
+
+  factory DjProgram.fromJson(Map<String, dynamic> json) {
+    final radio = json['radio'] as Map<String, dynamic>?;
+    final dj = json['dj'] as Map<String, dynamic>?;
+    return DjProgram(
+      id: intOf(json['id']),
+      name: '${json['name'] ?? ''}',
+      coverUrl: httpsUrl(json['coverUrl'] as String?),
+      desc: '${json['description'] ?? ''}',
+      duration: intOf(json['duration']),
+      mainSongId: intOf(json['mainSongId'] ?? json['mainTrackId']),
+      radioName: '${radio?['name'] ?? ''}',
+      djName: '${dj?['nickname'] ?? ''}',
+      listenerCount: intOf(json['listenerCount']),
+    );
+  }
+
+  /// 转成 Song，复用现有播放器（用电台封面做专辑图）
+  Song toSong() => Song(
+        id: mainSongId,
+        name: name,
+        artists: [ArtistMini(id: 0, name: djName)],
+        album: AlbumMini(id: 0, name: radioName, picUrl: coverUrl),
+        duration: duration,
+      );
 }

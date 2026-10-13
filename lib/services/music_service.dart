@@ -45,6 +45,46 @@ return list
 .toList();
 }
 
+/// 播客：推荐电台
+Future<List<DjRadio>> djRecommend({int limit = 20}) async {
+final d = await api.get('/dj/recommend', {'limit': limit});
+final list = d['djRadios'] as List? ?? [];
+return list
+.whereType<Map<String, dynamic>>()
+.map(DjRadio.fromJson)
+.toList();
+}
+
+/// 播客：热门电台
+Future<List<DjRadio>> djHot({int limit = 20, int offset = 0}) async {
+final d = await api.get('/dj/hot', {'limit': limit, 'offset': offset});
+final list = d['djRadios'] as List? ?? [];
+return list
+.whereType<Map<String, dynamic>>()
+.map(DjRadio.fromJson)
+.toList();
+}
+
+/// 播客：电台节目列表
+Future<List<DjProgram>> djPrograms(int rid,
+{int limit = 30, int offset = 0}) async {
+final d = await api.get(
+'/dj/program', {'rid': rid, 'limit': limit, 'offset': offset});
+final list = d['programs'] as List? ?? [];
+return list
+.whereType<Map<String, dynamic>>()
+.map(DjProgram.fromJson)
+.toList();
+}
+
+/// 播客：电台详情
+Future<DjRadio?> djDetail(int rid) async {
+final d = await api.get('/dj/detail', {'rid': rid});
+final r = d['data'];
+if (r is Map<String, dynamic>) return DjRadio.fromJson(r);
+return null;
+}
+
 Future<List<ArtistMini>> hotArtists({int limit = 12}) async {
 final d = await api.get('/toplist/artist', {'type': 1});
 final list = d['list'] as Map<String, dynamic>? ?? {};

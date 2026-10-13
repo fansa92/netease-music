@@ -8,6 +8,8 @@ import 'screens/album_detail_screen.dart';
 import 'screens/artist_detail_screen.dart';
 import 'screens/blog_screen.dart';
 import 'screens/comments_screen.dart';
+import 'screens/dj_detail_screen.dart';
+import 'screens/dj_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/player_screen.dart';
@@ -109,6 +111,14 @@ class NeteaseMusicApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const DetailScaffold(child: SettingsScreen()));
           case '/theme':
             return MaterialPageRoute(builder: (_) => const DetailScaffold(child: ThemeScreen()));
+          case '/dj':
+            if (args is int) {
+              return MaterialPageRoute(
+                builder: (_) => DetailScaffold(
+                  child: DjDetailScreen(radioId: args),
+                ),
+              );
+            }
           case '/comments':
             if (args is Song) {
               return MaterialPageRoute(
@@ -146,7 +156,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;
 
-  final _tabs = const [HomeScreen(), SearchScreen(), BlogScreen(), UserScreen()];
+  final _tabs = const [HomeScreen(), DjScreen(), SearchScreen(), BlogScreen(), UserScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +177,11 @@ class _AppShellState extends State<AppShell> {
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home),
                       label: Text('发现'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.podcasts_outlined),
+                      selectedIcon: Icon(Icons.podcasts),
+                      label: Text('播客'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.search_outlined),
@@ -220,6 +235,11 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home),
                 label: '发现',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.podcasts_outlined),
+                selectedIcon: Icon(Icons.podcasts),
+                label: '播客',
               ),
               NavigationDestination(
                 icon: Icon(Icons.search_outlined),
