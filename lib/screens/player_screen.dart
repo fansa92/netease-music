@@ -10,6 +10,7 @@ import '../models/models.dart';
 import '../services/auth_service.dart';
 import '../services/music_service.dart';
 import '../services/player_service.dart';
+import '../services/settings_service.dart';
 import '../widgets/cover_image.dart';
 import '../widgets/mini_player.dart';
 

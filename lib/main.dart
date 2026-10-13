@@ -38,8 +38,9 @@ void main() async {
   final settings = SettingsService(api);
   await settings.init();
   await auth.init();
-  // iOS 锁屏/控制中心媒体信息同步（内部判断平台；持有引用防止被回收）
-  final nowPlaying = NowPlayingService(player);
+  // iOS 锁屏/控制中心媒体信息同步（内部判断平台）
+  // 通过 player 的 listener 持有引用，不会被回收
+  NowPlayingService(player);
 
   runApp(
     MultiProvider(
