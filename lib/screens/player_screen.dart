@@ -281,11 +281,104 @@ class PlayerScreen extends StatelessWidget {
               Navigator.pushNamed(context, '/comments', arguments: song),
         ),
         IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.white70),
+          tooltip: '歌曲信息',
+          onPressed: () => _showSongInfo(context, player, song),
+        ),
+        IconButton(
           icon: const Icon(Icons.playlist_add, color: Colors.white70),
           onPressed: () => player.playNext(song),
           tooltip: '下一首播放',
         ),
       ],
+    );
+  }
+
+  /// 歌曲信息面板：点击「详情」弹出
+  void _showSongInfo(
+      BuildContext context, PlayerService player, Song song) {
+    final duration = player.duration;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('歌曲信息',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close,
+                        size: 20, color: AppColors.textSecondary),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CoverImage(url: song.picUrl, size: 72, radius: 12),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(song.name,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text(song.artistNames,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _infoRow('专辑', song.album?.name ?? '未知专辑'),
+              _infoRow('时长', duration != null ? _fmt(duration) : '--:--'),
+              _infoRow('音质', player.qualityLabel),
+              _infoRow('歌曲 ID', '${song.id}'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.textSecondary)),
+          ),
+          Expanded(
+            child: Text(value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 13, color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 

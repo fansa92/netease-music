@@ -15,19 +15,21 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _controller;
+  late final TextEditingController _blogController;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
-      text: context.read<SettingsService>().apiBaseUrl,
-    );
+    final settings = context.read<SettingsService>();
+    _controller = TextEditingController(text: settings.apiBaseUrl);
+    _blogController = TextEditingController(text: settings.blogUrl);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _blogController.dispose();
     super.dispose();
   }
 
@@ -115,21 +117,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontSize: 12, color: AppColors.textSecondary),
           ),
           const Divider(height: 48),
+          Text('博客',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(color: cs.primary)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _blogController,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            decoration: const InputDecoration(
+              hintText: 'https://你的博客地址',
+              prefixIcon: Icon(Icons.rss_feed_outlined),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await context
+                  .read<SettingsService>()
+                  .setBlogUrl(_blogController.text);
+              messenger.showSnackBar(
+                const SnackBar(content: Text('博客地址已保存')),
+              );
+            },
+            child: const Text('保存博客地址'),
+          ),
+          const Divider(height: 48),
           Text('外观',
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
                   ?.copyWith(color: cs.primary)),
           const SizedBox(height: 8),
-          SwitchListTile(
+          ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('动态取色'),
-            subtitle: const Text('跟随系统壁纸生成主题色（Android 12+）',
-                style: TextStyle(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: cs.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.palette_outlined,
+                  color: Colors.white, size: 22),
+            ),
+            title: const Text('主题'),
+            subtitle: Text(
+                settings.dynamicColor
+                    ? '动态取色（跟随系统壁纸）'
+                    : settings.themeName,
+                style: const TextStyle(
                     fontSize: 12, color: AppColors.textSecondary)),
-            value: settings.dynamicColor,
-            onChanged: (v) =>
-                context.read<SettingsService>().setDynamicColor(v),
+            trailing: const Icon(Icons.chevron_right,
+                color: AppColors.textSecondary),
+            onTap: () => Navigator.pushNamed(context, '/theme'),
           ),
           const Divider(height: 48),
           Text('关于',

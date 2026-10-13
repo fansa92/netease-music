@@ -6,6 +6,7 @@ import 'core/theme.dart';
 import 'models/models.dart';
 import 'screens/album_detail_screen.dart';
 import 'screens/artist_detail_screen.dart';
+import 'screens/blog_screen.dart';
 import 'screens/comments_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -14,12 +15,14 @@ import 'screens/playlist_detail_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/song_list_screen.dart';
+import 'screens/theme_screen.dart';
 import 'screens/toplist_screen.dart';
 import 'screens/user_screen.dart';
 import 'services/auth_service.dart';
 import 'services/music_service.dart';
 import 'services/player_service.dart';
 import 'services/settings_service.dart';
+import 'widgets/detail_scaffold.dart';
 import 'widgets/mini_player.dart';
 
 void main() async {
@@ -65,27 +68,34 @@ class NeteaseMusicApp extends StatelessWidget {
         switch (settings.name) {
           case '/search':
             return MaterialPageRoute(
-              builder: (_) =>
-                  SearchScreen(autofocus: args is bool ? args : false),
+              builder: (_) => DetailScaffold(
+                child: SearchScreen(autofocus: args is bool ? args : false),
+              ),
             );
           case '/playlist':
             if (args is int) {
               return MaterialPageRoute(
-                builder: (_) => PlaylistDetailScreen(playlistId: args),
+                builder: (_) => DetailScaffold(
+                child: PlaylistDetailScreen(playlistId: args),
+              ),
               );
             }
           case '/artist':
             if (args is int) {
               return MaterialPageRoute(
-                builder: (_) => ArtistDetailScreen(artistId: args),
+                builder: (_) => DetailScaffold(
+                child: ArtistDetailScreen(artistId: args),
+              ),
               );
             }
           case '/artists':
-            return MaterialPageRoute(builder: (_) => const ArtistsScreen());
+            return MaterialPageRoute(builder: (_) => const DetailScaffold(child: ArtistsScreen()));
           case '/album':
             if (args is int) {
               return MaterialPageRoute(
-                builder: (_) => AlbumDetailScreen(albumId: args),
+                builder: (_) => DetailScaffold(
+                child: AlbumDetailScreen(albumId: args),
+              ),
               );
             }
           case '/player':
@@ -96,21 +106,25 @@ class NeteaseMusicApp extends StatelessWidget {
           case '/login':
             return MaterialPageRoute(builder: (_) => const LoginScreen());
           case '/settings':
-            return MaterialPageRoute(builder: (_) => const SettingsScreen());
+            return MaterialPageRoute(builder: (_) => const DetailScaffold(child: SettingsScreen()));
+          case '/theme':
+            return MaterialPageRoute(builder: (_) => const DetailScaffold(child: ThemeScreen()));
           case '/comments':
             if (args is Song) {
               return MaterialPageRoute(
-                builder: (_) => CommentsScreen(song: args),
+                builder: (_) => DetailScaffold(child: CommentsScreen(song: args)),
               );
             }
           case '/toplist':
-            return MaterialPageRoute(builder: (_) => const ToplistScreen());
+            return MaterialPageRoute(builder: (_) => const DetailScaffold(child: ToplistScreen()));
           case '/songlist':
             if (args is Map) {
               return MaterialPageRoute(
-                builder: (_) => SongListScreen(
-                  title: '${args['title'] ?? '歌曲列表'}',
-                  loader: '${args['loader'] ?? ''}',
+                builder: (_) => DetailScaffold(
+                  child: SongListScreen(
+                    title: '${args['title'] ?? '歌曲列表'}',
+                    loader: '${args['loader'] ?? ''}',
+                  ),
                 ),
               );
             }
@@ -132,7 +146,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;
 
-  final _tabs = const [HomeScreen(), SearchScreen(), UserScreen()];
+  final _tabs = const [HomeScreen(), SearchScreen(), BlogScreen(), UserScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -158,6 +172,11 @@ class _AppShellState extends State<AppShell> {
                       icon: Icon(Icons.search_outlined),
                       selectedIcon: Icon(Icons.search),
                       label: Text('搜索'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.rss_feed_outlined),
+                      selectedIcon: Icon(Icons.rss_feed),
+                      label: Text('博客'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline),
@@ -206,6 +225,11 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.search_outlined),
                 selectedIcon: Icon(Icons.search),
                 label: '搜索',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.rss_feed_outlined),
+                selectedIcon: Icon(Icons.rss_feed),
+                label: '博客',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline),
