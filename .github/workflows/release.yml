@@ -84,6 +84,22 @@ jobs:
       - run: flutter pub get
       - run: flutter build ipa --release --no-codesign
 
+      - name: Package unsigned IPA (fallback if flutter export missed it)
+        run: |
+          if ls build/ios/ipa/*.ipa 1>/dev/null 2>&1; then
+            echo "IPA already exported by flutter"
+            exit 0
+          fi
+          APP_PATH=$(find build/ios/archive -name "Runner.app" -type d 2>/dev/null | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "No Runner.app found in archive" && exit 1
+          fi
+          echo "Packaging $APP_PATH"
+          rm -rf /tmp/ipapack && mkdir -p /tmp/ipapack/Payload build/ios/ipa
+          cp -R "$APP_PATH" /tmp/ipapack/Payload/
+          cd /tmp/ipapack && zip -qry "$OLDPWD/build/ios/ipa/netease-music-unsigned.ipa" Payload
+          ls -la "$OLDPWD/build/ios/ipa/"
+
       - uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
