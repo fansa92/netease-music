@@ -101,7 +101,7 @@ class PlayerScreen extends StatelessWidget {
                     ),
                     _buildErrorHint(player),
                     _buildTitleRow(context, player, song),
-                    _buildProgress(player),
+                    _buildProgress(context, player),
                     _buildControls(context, player),
                     // 桌面端不显示音量控制
                     if (!_isDesktop) _VolumeRow(player: player),
@@ -299,7 +299,7 @@ class PlayerScreen extends StatelessWidget {
 
   /// Apple Music 风格进度条：细滑杆，左已播 / 右剩余（负数）
   /// [waveform] 为 true 时显示波浪形进度条
-  Widget _buildProgress(PlayerService player) {
+  Widget _buildProgress(BuildContext context, PlayerService player) {
     final waveform =
         context.select<SettingsService, bool>((s) => s.waveformProgress);
     return StreamBuilder<Duration>(
