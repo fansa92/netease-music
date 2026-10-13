@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -12,7 +11,8 @@ import '../services/player_service.dart';
 import '../widgets/cover_image.dart';
 import '../widgets/mini_player.dart';
 
-/// 全屏播放器：旋转封面 / 同步歌词 / 播放控制
+/// 全屏播放器：Apple Music 风格
+/// 方形大封面 / 左对齐歌名歌手 / 细进度条 / 大按钮 / 音量条 / 同步歌词
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
 
@@ -34,30 +34,14 @@ class PlayerScreen extends StatelessWidget {
               icon: const Icon(Icons.keyboard_arrow_down, size: 30),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Column(
-              children: [
-                Text(song.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 16)),
-                Text(song.artistNames,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.normal)),
-              ],
-            ),
-            centerTitle: true,
           ),
           body: Stack(
             fit: StackFit.expand,
             children: [
-              // 模糊背景（Border-Player 质感风格：封面高斯模糊 + 渐变罩）
+              // 模糊背景：封面高斯模糊 + 渐变罩
               if (song.picUrl.isNotEmpty)
                 ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                  imageFilter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
                   child: CoverImage(
                       url: song.picUrl, size: double.infinity, radius: 0),
                 ),
@@ -67,8 +51,8 @@ class PlayerScreen extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.55),
-                      Colors.black.withValues(alpha: 0.85),
+                      Colors.black.withValues(alpha: 0.45),
+                      Colors.black.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -76,21 +60,20 @@ class PlayerScreen extends StatelessWidget {
               SafeArea(
                 child: Column(
                   children: [
-                    const SizedBox(height: kToolbarHeight + 8),
                     Expanded(
                       child: PageView(
                         children: [
-                          _DiscView(song: song),
+                          _ArtworkView(song: song),
                           const _LyricView(),
                         ],
                       ),
                     ),
                     _buildErrorHint(player),
-                    _buildQualityRow(context, player),
+                    _buildTitleRow(context, player, song),
                     _buildProgress(player),
                     _buildControls(context, player),
-                    _buildActions(context, player, song),
-                    const SizedBox(height: 12),
+                    _VolumeRow(player: player),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -113,26 +96,139 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQualityRow(BuildContext context, PlayerService player) {
-    return TextButton(
-      onPressed: () => _showQualitySheet(context, player),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white30),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
+  /// Apple Music 风格：歌名/歌手左对齐，右边「...」更多
+  Widget _buildTitleRow(
+      BuildContext context, PlayerService player, Song song) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 16, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  song.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  song.artistNames,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    color: Colors.white60,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_horiz, color: Colors.white70),
+            onPressed: () => _showMoreSheet(context, player, song),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 「...」更多操作
+  void _showMoreSheet(
+      BuildContext context, PlayerService player, Song song) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(player.qualityLabel,
-                style: const TextStyle(fontSize: 11, color: Colors.white70)),
-            const Icon(Icons.arrow_drop_down,
-                size: 16, color: Colors.white70),
+            ListTile(
+              leading: const Icon(Icons.favorite_border),
+              title: const Text('喜欢'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _toggleLike(context, song);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.comment_outlined),
+              title: const Text('评论'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/comments', arguments: song);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('歌曲信息'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showSongInfo(context, player, song);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.high_quality_outlined),
+              title: Text('音质：${player.qualityLabel}'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showQualitySheet(context, player);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.playlist_add),
+              title: const Text('下一首播放'),
+              onTap: () {
+                Navigator.pop(ctx);
+                player.playNext(song);
+              },
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
     );
+  }
+
+  void _toggleLike(BuildContext context, Song song) async {
+    final auth = context.read<AuthService>();
+    if (!auth.loggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('喜欢音乐需要登录'),
+          action: SnackBarAction(
+            label: '去登录',
+            onPressed: () => Navigator.pushNamed(context, '/login'),
+          ),
+        ),
+      );
+      return;
+    }
+    try {
+      // 简单切换：先查喜欢列表比较重，这里直接调用喜欢接口
+      await context.read<MusicService>().like(song.id, true);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('已添加到我喜欢的音乐'),
+              duration: Duration(milliseconds: 800)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('操作失败：$e')));
+      }
+    }
   }
 
   void _showQualitySheet(BuildContext context, PlayerService player) {
@@ -169,35 +265,54 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
+  /// Apple Music 风格进度条：细滑杆，左已播 / 右剩余（负数）
   Widget _buildProgress(PlayerService player) {
     return StreamBuilder<Duration>(
       stream: player.positionStream,
       builder: (context, snapshot) {
         final pos = snapshot.data ?? Duration.zero;
         final total = player.duration ?? Duration.zero;
+        final remain = total - pos;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
+          child: Column(
             children: [
-              Text(_fmt(pos),
-                  style: const TextStyle(
-                      fontSize: 11, color: Colors.white60)),
-              Expanded(
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 4,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  overlayShape:
+                      const RoundSliderOverlayShape(overlayRadius: 12),
+                  activeTrackColor: Colors.white70,
+                  inactiveTrackColor: Colors.white24,
+                  thumbColor: Colors.white,
+                  overlayColor: Colors.white24,
+                ),
                 child: Slider(
                   value: pos.inMilliseconds
                       .clamp(0, total.inMilliseconds)
                       .toDouble(),
-                  max: (total.inMilliseconds > 0
-                          ? total.inMilliseconds
-                          : 1)
+                  max: (total.inMilliseconds > 0 ? total.inMilliseconds : 1)
                       .toDouble(),
                   onChanged: (v) =>
                       player.seek(Duration(milliseconds: v.toInt())),
                 ),
               ),
-              Text(_fmt(total),
-                  style: const TextStyle(
-                      fontSize: 11, color: Colors.white60)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_fmt(pos),
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.white54)),
+                    Text('-${_fmt(remain.isNegative ? Duration.zero : remain)}',
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.white54)),
+                  ],
+                ),
+              ),
             ],
           ),
         );
@@ -211,14 +326,16 @@ class PlayerScreen extends StatelessWidget {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 
+  /// Apple Music 风格控制区：大按钮无底圈
   Widget _buildControls(BuildContext context, PlayerService player) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
-            icon: Icon(_modeIcon(player.mode), color: Colors.white70),
+            icon: Icon(_modeIcon(player.mode),
+                size: 24, color: Colors.white70),
             tooltip: player.modeLabel,
             onPressed: () {
               player.cycleMode();
@@ -230,30 +347,25 @@ class PlayerScreen extends StatelessWidget {
             },
           ),
           IconButton(
-            icon:
-                const Icon(Icons.skip_previous, size: 40, color: Colors.white),
+            icon: const Icon(Icons.skip_previous,
+                size: 44, color: Colors.white),
             onPressed: player.prev,
           ),
-          Container(
-            decoration: BoxDecoration(
+          IconButton(
+            icon: Icon(
+              player.playing ? Icons.pause : Icons.play_arrow,
+              size: 58,
               color: Colors.white,
-              shape: BoxShape.circle,
             ),
-            child: IconButton(
-              icon: Icon(
-                player.playing ? Icons.pause : Icons.play_arrow,
-                size: 36,
-                color: Colors.black87,
-              ),
-              onPressed: player.toggle,
-            ),
+            onPressed: player.toggle,
           ),
           IconButton(
-            icon: const Icon(Icons.skip_next, size: 40, color: Colors.white),
+            icon: const Icon(Icons.skip_next, size: 44, color: Colors.white),
             onPressed: player.next,
           ),
           IconButton(
-            icon: const Icon(Icons.queue_music, color: Colors.white70),
+            icon: const Icon(Icons.queue_music,
+                size: 24, color: Colors.white70),
             onPressed: () => showModalBottomSheet(
               context: context,
               backgroundColor: AppColors.bg,
@@ -269,32 +381,7 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(
-      BuildContext context, PlayerService player, Song song) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _LikeButton(song: song),
-        IconButton(
-          icon: const Icon(Icons.comment_outlined, color: Colors.white70),
-          onPressed: () =>
-              Navigator.pushNamed(context, '/comments', arguments: song),
-        ),
-        IconButton(
-          icon: const Icon(Icons.info_outline, color: Colors.white70),
-          tooltip: '歌曲信息',
-          onPressed: () => _showSongInfo(context, player, song),
-        ),
-        IconButton(
-          icon: const Icon(Icons.playlist_add, color: Colors.white70),
-          onPressed: () => player.playNext(song),
-          tooltip: '下一首播放',
-        ),
-      ],
-    );
-  }
-
-  /// 歌曲信息面板：点击「详情」弹出
+  /// 歌曲信息面板
   void _showSongInfo(
       BuildContext context, PlayerService player, Song song) {
     final duration = player.duration;
@@ -374,8 +461,7 @@ class PlayerScreen extends StatelessWidget {
             child: Text(value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    const TextStyle(fontSize: 13, color: Colors.white)),
+                style: const TextStyle(fontSize: 13, color: Colors.white)),
           ),
         ],
       ),
@@ -390,92 +476,84 @@ class PlayerScreen extends StatelessWidget {
       };
 }
 
-/// 旋转黑胶封面
-class _DiscView extends StatefulWidget {
+/// Apple Music 风格方形大封面：圆角 + 阴影
+class _ArtworkView extends StatelessWidget {
   final Song song;
-  const _DiscView({required this.song});
-
-  @override
-  State<_DiscView> createState() => _DiscViewState();
-}
-
-class _DiscViewState extends State<_DiscView>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  StreamSubscription? _sub;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 24),
-    );
-    final playing = context.read<PlayerService>().playing;
-    if (playing) _controller.repeat();
-    _sub = context
-        .read<PlayerService>()
-        .playingStream
-        .listen((playing) {
-      if (!mounted) return;
-      if (playing) {
-        if (!_controller.isAnimating) _controller.repeat();
-      } else {
-        _controller.stop();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
+  const _ArtworkView({required this.song});
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 300,
-            height: 300,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black54,
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 30,
-                  spreadRadius: 5,
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 40,
+                  spreadRadius: 4,
+                  offset: const Offset(0, 12),
                 ),
               ],
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CoverImage(
+                  url: song.picUrl, size: double.infinity, radius: 0),
+            ),
           ),
-          RotationTransition(
-            turns: _controller,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(shape: BoxShape.circle),
-              child: ClipOval(
-                child: CoverImage(
-                    url: widget.song.picUrl, size: 280, radius: 140),
+        ),
+      ),
+    );
+  }
+}
+
+/// 音量条（Apple Music 风格：喇叭图标 + 细滑杆）
+class _VolumeRow extends StatefulWidget {
+  final PlayerService player;
+  const _VolumeRow({required this.player});
+
+  @override
+  State<_VolumeRow> createState() => _VolumeRowState();
+}
+
+class _VolumeRowState extends State<_VolumeRow> {
+  double _volume = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          const Icon(Icons.volume_down, size: 18, color: Colors.white54),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 4,
+                thumbShape:
+                    const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape:
+                    const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: Colors.white54,
+                inactiveTrackColor: Colors.white24,
+                thumbColor: Colors.white,
+                overlayColor: Colors.white24,
+              ),
+              child: Slider(
+                value: _volume,
+                onChanged: (v) {
+                  setState(() => _volume = v);
+                  widget.player.setVolume(v);
+                },
               ),
             ),
           ),
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            child: const Icon(Icons.music_note,
-                color: Colors.white, size: 32),
-          ),
+          const Icon(Icons.volume_up, size: 18, color: Colors.white54),
         ],
       ),
     );
@@ -559,7 +637,7 @@ class _LyricViewState extends State<_LyricView> {
                               ? FontWeight.bold
                               : FontWeight.normal,
                           color: isCurrent
-                              ? Theme.of(context).colorScheme.primary
+                              ? Colors.white
                               : Colors.white60,
                         ),
                       ),
@@ -587,69 +665,6 @@ class _LyricViewState extends State<_LyricView> {
           },
         );
       },
-    );
-  }
-}
-
-/// 喜欢 / 取消喜欢按钮
-class _LikeButton extends StatefulWidget {
-  final Song song;
-  const _LikeButton({required this.song});
-
-  @override
-  State<_LikeButton> createState() => _LikeButtonState();
-}
-
-class _LikeButtonState extends State<_LikeButton> {
-  bool _liked = false;
-  bool _busy = false;
-
-  void _toggle() async {
-    final auth = context.read<AuthService>();
-    if (!auth.loggedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('喜欢音乐需要登录'),
-          action: SnackBarAction(
-            label: '去登录',
-            onPressed: () => Navigator.pushNamed(context, '/login'),
-          ),
-        ),
-      );
-      return;
-    }
-    if (_busy) return;
-    setState(() => _busy = true);
-    try {
-      await context
-          .read<MusicService>()
-          .like(widget.song.id, !_liked);
-      setState(() => _liked = !_liked);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(_liked ? '已添加到我喜欢的音乐' : '已取消喜欢'),
-              duration: const Duration(milliseconds: 800)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('操作失败：$e')));
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        _liked ? Icons.favorite : Icons.favorite_border,
-        color: _liked ? Theme.of(context).colorScheme.primary : Colors.white70,
-      ),
-      onPressed: _toggle,
     );
   }
 }
