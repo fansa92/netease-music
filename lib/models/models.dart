@@ -457,6 +457,10 @@ class DjRadio {
   final String desc;
   final int programCount;
   final int playCount;
+  final String djName;
+  final String djAvatar;
+  final bool subed;
+  final int commentCount;
 
   const DjRadio({
     required this.id,
@@ -465,9 +469,14 @@ class DjRadio {
     this.desc = '',
     this.programCount = 0,
     this.playCount = 0,
+    this.djName = '',
+    this.djAvatar = '',
+    this.subed = false,
+    this.commentCount = 0,
   });
 
   factory DjRadio.fromJson(Map<String, dynamic> json) {
+    final dj = json['dj'] as Map<String, dynamic>?;
     return DjRadio(
       id: intOf(json['id']),
       name: '${json['name'] ?? ''}',
@@ -475,6 +484,10 @@ class DjRadio {
       desc: '${json['copywriter'] ?? json['desc'] ?? ''}',
       programCount: intOf(json['programCount']),
       playCount: intOf(json['playCount'] ?? json['subCount']),
+      djName: '${dj?['nickname'] ?? ''}',
+      djAvatar: httpsUrl(dj?['avatarUrl'] as String?),
+      subed: json['subed'] == true,
+      commentCount: intOf(json['commentCount']),
     );
   }
 }

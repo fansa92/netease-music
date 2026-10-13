@@ -85,6 +85,39 @@ if (r is Map<String, dynamic>) return DjRadio.fromJson(r);
 return null;
 }
 
+/// 播客：订阅/取消订阅电台（收藏）
+Future<void> djSub(int rid, bool sub) async {
+await api.get('/dj/sub', {'rid': rid, 't': sub ? 1 : 0});
+}
+
+/// 播客：电台评论
+Future<CommentPage> djComments(int rid,
+{int limit = 20, int offset = 0}) async {
+final d = await api.get('/comment/dj', {
+'id': rid,
+'limit': limit,
+'offset': offset,
+});
+final cs = <CommentItem>[];
+final hot = d['hotComments'];
+if (hot is List) {
+for (final e in hot) {
+if (e is Map<String, dynamic>) cs.add(CommentItem.fromJson(e));
+}
+}
+final list = d['comments'];
+if (list is List) {
+for (final e in list) {
+if (e is Map<String, dynamic>) cs.add(CommentItem.fromJson(e));
+}
+}
+return CommentPage(
+comments: cs,
+total: intOf(d['total']),
+hasMore: d['more'] == true,
+);
+}
+
 Future<List<ArtistMini>> hotArtists({int limit = 12}) async {
 final d = await api.get('/toplist/artist', {'type': 1});
 final list = d['list'] as Map<String, dynamic>? ?? {};
