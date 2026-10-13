@@ -27,6 +27,8 @@ import 'services/settings_service.dart';
 import 'widgets/detail_scaffold.dart';
 import 'widgets/mini_player.dart';
 
+import 'services/now_playing_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -37,6 +39,8 @@ void main() async {
   final settings = SettingsService(api);
   await settings.init();
   await auth.init();
+  // iOS 锁屏/控制中心媒体信息同步（内部判断平台）
+  NowPlayingService(player);
 
   runApp(
     MultiProvider(
