@@ -35,7 +35,7 @@ class SongTile extends StatelessWidget {
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       leading: showPic
-          ? CoverImage(url: song.picUrl, size: 44, radius: 6)
+          ? CoverImage(url: song.picUrl, size: 44, radius: 12)
           : index != null
               ? SizedBox(
                   width: 28,
@@ -104,7 +104,7 @@ void showSongActions(BuildContext context, Song song) {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: CoverImage(url: song.picUrl, size: 44, radius: 6),
+              leading: CoverImage(url: song.picUrl, size: 44, radius: 12),
               title: Text(song.name,
                   maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(song.artistNames,

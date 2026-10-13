@@ -15,87 +15,112 @@ class MiniPlayer extends StatelessWidget {
       builder: (context, player, _) {
         final song = player.current;
         if (song == null) return const SizedBox.shrink();
+        final cs = Theme.of(context).colorScheme;
         return GestureDetector(
           onTap: () => Navigator.pushNamed(context, '/player'),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.card,
-              border: Border(top: BorderSide(color: AppColors.divider)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: 60,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      CoverImage(url: song.picUrl, size: 42, radius: 6),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              song.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14),
+          child: Padding(
+            // 悬浮卡片：参考 Border-Player 底部迷你播放栏
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+            child: Material(
+              color: cs.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(20),
+              elevation: 6,
+              shadowColor: Colors.black54,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 64,
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 8),
+                          CoverImage(url: song.picUrl, size: 48, radius: 12),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  song.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  song.artistNames,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              song.artistNames,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
+                          ),
+                          // 圆形填充播放键（Border-Player 风格）
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Material(
+                              color: AppColors.primary,
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: player.toggle,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Icon(
+                                    player.playing
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                    size: 24,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.skip_next,
+                                color: Colors.white70),
+                            onPressed: player.next,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.queue_music,
+                                color: Colors.white70),
+                            onPressed: () => _showQueue(context, player),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                       ),
-                      IconButton(
-                        icon: Icon(
-                          player.playing
-                              ? Icons.pause_circle_filled
-                              : Icons.play_circle_filled,
-                          size: 36,
-                          color: Colors.white,
-                        ),
-                        onPressed: player.toggle,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.skip_next,
-                            color: Colors.white70),
-                        onPressed: player.next,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.queue_music,
-                            color: Colors.white70),
-                        onPressed: () => _showQueue(context, player),
-                      ),
-                    ],
-                  ),
+                    ),
+                    // 播放进度细条
+                    StreamBuilder<Duration>(
+                      stream: player.player.positionStream,
+                      builder: (context, snapshot) {
+                        final pos = snapshot.data ?? Duration.zero;
+                        final total =
+                            player.player.duration ?? Duration.zero;
+                        final ratio = total.inMilliseconds > 0
+                            ? pos.inMilliseconds /
+                                total.inMilliseconds
+                            : 0.0;
+                        return LinearProgressIndicator(
+                          value: ratio.clamp(0.0, 1.0),
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                // 播放进度细条
-                StreamBuilder<Duration>(
-                  stream: player.player.positionStream,
-                  builder: (context, snapshot) {
-                    final pos = snapshot.data ?? Duration.zero;
-                    final total =
-                        player.player.duration ?? Duration.zero;
-                    final ratio = total.inMilliseconds > 0
-                        ? pos.inMilliseconds / total.inMilliseconds
-                        : 0.0;
-                    return LinearProgressIndicator(
-                      value: ratio.clamp(0.0, 1.0),
-                      minHeight: 2,
-                      backgroundColor: Colors.transparent,
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         );

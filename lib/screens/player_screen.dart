@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -53,10 +54,25 @@ class PlayerScreen extends StatelessWidget {
           body: Stack(
             fit: StackFit.expand,
             children: [
-              // 模糊背景
+              // 模糊背景（Border-Player 质感风格：封面高斯模糊 + 渐变罩）
               if (song.picUrl.isNotEmpty)
-                CoverImage(url: song.picUrl, size: double.infinity, radius: 0),
-              Container(color: Colors.black.withValues(alpha: 0.72)),
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                  child: CoverImage(
+                      url: song.picUrl, size: double.infinity, radius: 0),
+                ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.55),
+                      Colors.black.withValues(alpha: 0.85),
+                    ],
+                  ),
+                ),
+              ),
               SafeArea(
                 child: Column(
                   children: [

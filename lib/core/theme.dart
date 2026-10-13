@@ -9,14 +9,24 @@ class AppColors {
 }
 
 ThemeData buildTheme() {
+  // M3 tonal 配色（参考 Border-Player 的质感风格： tonal 容器 + 大圆角）
+  const scheme = ColorScheme.dark(
+    primary: AppColors.primary,
+    onPrimary: Colors.white,
+    primaryContainer: Color(0xFF7A231D),
+    onPrimaryContainer: Color(0xFFFFDAD6),
+    surface: AppColors.bg,
+    surfaceContainerLowest: Color(0xFF0E0F12),
+    surfaceContainerLow: AppColors.bg,
+    surfaceContainer: Color(0xFF1B1C21),
+    surfaceContainerHigh: Color(0xFF232429),
+    surfaceContainerHighest: AppColors.divider,
+  );
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: AppColors.bg,
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.primary,
-      surface: AppColors.bg,
-    ),
+    colorScheme: scheme,
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.bg,
       elevation: 0,
