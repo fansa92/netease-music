@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme.dart';
 import '../core/utils.dart';
 import '../models/models.dart';
 import '../services/auth_service.dart';
@@ -118,7 +117,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                                 ? Icons.favorite
                                 : Icons.favorite_border,
                             color: _subscribed
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : Colors.white,
                           ),
                           onPressed: _toggleSubscribe,
@@ -231,8 +230,8 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     ),
                     SliverToBoxAdapter(
                       child: ListTile(
-                        leading: const Icon(Icons.play_circle_filled,
-                            color: AppColors.primary, size: 30),
+                        leading: Icon(Icons.play_circle_filled,
+                            color: Theme.of(context).colorScheme.primary, size: 30),
                         title: Text(
                             '播放全部（${tracks.length}）',
                             style:

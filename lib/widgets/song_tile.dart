@@ -45,7 +45,7 @@ class SongTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       color: index! <= 3
-                          ? AppColors.primary
+                          ? Theme.of(context).colorScheme.primary
                           : AppColors.textSecondary,
                       fontWeight:
                           index! <= 3 ? FontWeight.bold : FontWeight.normal,
@@ -59,7 +59,7 @@ class SongTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 15,
-          color: highlight ? AppColors.primary : Colors.white,
+          color: highlight ? Theme.of(context).colorScheme.primary : Colors.white,
         ),
       ),
       subtitle: Text(

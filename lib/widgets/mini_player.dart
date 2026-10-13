@@ -68,7 +68,7 @@ class MiniPlayer extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(right: 4),
                             child: Material(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               shape: const CircleBorder(),
                               child: InkWell(
                                 customBorder: const CircleBorder(),
@@ -187,15 +187,15 @@ class QueueSheet extends StatelessWidget {
                     return ListTile(
                       dense: true,
                       leading: isCurrent
-                          ? const Icon(Icons.graphic_eq,
-                              color: AppColors.primary, size: 20)
+                          ? Icon(Icons.graphic_eq,
+                              color: Theme.of(context).colorScheme.primary, size: 20)
                           : null,
                       title: Text(
                         s.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isCurrent ? AppColors.primary : Colors.white,
+                          color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
                         ),
                       ),
                       subtitle: Text(

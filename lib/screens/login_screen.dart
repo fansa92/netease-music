@@ -18,11 +18,11 @@ class LoginScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('登录'),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [Tab(text: '二维码登录'), Tab(text: '手机号登录')],
-            labelColor: AppColors.primary,
+            labelColor: Theme.of(context).colorScheme.primary,
             unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
+            indicatorColor: Theme.of(context).colorScheme.primary,
           ),
         ),
         body: const TabBarView(
@@ -155,7 +155,7 @@ class _QrLoginTabState extends State<_QrLoginTab> {
               icon: const Icon(Icons.refresh),
               label: const Text('刷新二维码'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
               ),
             ),
@@ -217,8 +217,8 @@ class _PhoneLoginTabState extends State<_PhoneLoginTab> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 24),
-          const Icon(Icons.music_note,
-              size: 64, color: AppColors.primary),
+          Icon(Icons.music_note,
+              size: 64, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 24),
           TextField(
             controller: _phoneController,
@@ -252,7 +252,7 @@ class _PhoneLoginTabState extends State<_PhoneLoginTab> {
           ElevatedButton(
             onPressed: _busy ? null : _login,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(

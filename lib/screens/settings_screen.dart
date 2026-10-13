@@ -115,6 +115,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontSize: 12, color: AppColors.textSecondary),
           ),
           const Divider(height: 48),
+          Text('外观',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(color: cs.primary)),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('动态取色'),
+            subtitle: const Text('跟随系统壁纸生成主题色（Android 12+）',
+                style: TextStyle(
+                    fontSize: 12, color: AppColors.textSecondary)),
+            value: settings.dynamicColor,
+            onChanged: (v) =>
+                context.read<SettingsService>().setDynamicColor(v),
+          ),
+          const Divider(height: 48),
           Text('关于',
               style: Theme.of(context)
                   .textTheme

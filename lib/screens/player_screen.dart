@@ -154,8 +154,8 @@ class PlayerScreen extends StatelessWidget {
             ...qualityLevels.entries.map((e) => ListTile(
                   title: Text(e.value),
                   trailing: player.quality == e.key
-                      ? const Icon(Icons.check,
-                          color: AppColors.primary)
+                      ? Icon(Icons.check,
+                          color: Theme.of(context).colorScheme.primary)
                       : null,
                   onTap: () {
                     Navigator.pop(ctx);
@@ -235,7 +235,7 @@ class PlayerScreen extends StatelessWidget {
             onPressed: player.prev,
           ),
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
@@ -367,7 +367,7 @@ class _DiscViewState extends State<_DiscView>
             child: Container(
               width: 280,
               height: 280,
-              decoration: const BoxDecoration(shape: BoxShape.circle),
+              decoration: BoxDecoration(shape: BoxShape.circle),
               child: ClipOval(
                 child: CoverImage(
                     url: widget.song.picUrl, size: 280, radius: 140),
@@ -377,9 +377,9 @@ class _DiscViewState extends State<_DiscView>
           Container(
             width: 72,
             height: 72,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
             child: const Icon(Icons.music_note,
                 color: Colors.white, size: 32),
@@ -467,7 +467,7 @@ class _LyricViewState extends State<_LyricView> {
                               ? FontWeight.bold
                               : FontWeight.normal,
                           color: isCurrent
-                              ? AppColors.primary
+                              ? Theme.of(context).colorScheme.primary
                               : Colors.white60,
                         ),
                       ),
@@ -555,7 +555,7 @@ class _LikeButtonState extends State<_LikeButton> {
     return IconButton(
       icon: Icon(
         _liked ? Icons.favorite : Icons.favorite_border,
-        color: _liked ? AppColors.primary : Colors.white70,
+        color: _liked ? Theme.of(context).colorScheme.primary : Colors.white70,
       ),
       onPressed: _toggle,
     );

@@ -125,7 +125,7 @@ class _UserScreenState extends State<UserScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pushNamed(context, '/login'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                   horizontal: 48, vertical: 12),
@@ -203,8 +203,8 @@ class _UserScreenState extends State<UserScreen> {
         ),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.favorite,
-              color: AppColors.primary),
+          leading: Icon(Icons.favorite,
+              color: Theme.of(context).colorScheme.primary),
           title: const Text('我喜欢的音乐'),
           trailing: const Icon(Icons.chevron_right,
               color: AppColors.textSecondary),
@@ -215,8 +215,8 @@ class _UserScreenState extends State<UserScreen> {
               }),
         ),
         ListTile(
-          leading: const Icon(Icons.calendar_today,
-              color: AppColors.primary),
+          leading: Icon(Icons.calendar_today,
+              color: Theme.of(context).colorScheme.primary),
           title: const Text('每日推荐歌曲'),
           trailing: const Icon(Icons.chevron_right,
               color: AppColors.textSecondary),
@@ -241,8 +241,8 @@ class _UserScreenState extends State<UserScreen> {
           child: OutlinedButton(
             onPressed: () => _confirmLogout(context),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary),
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              side: BorderSide(color: Theme.of(context).colorScheme.primary),
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
@@ -262,7 +262,7 @@ class _UserScreenState extends State<UserScreen> {
           const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: highlight
-            ? AppColors.primary.withValues(alpha: 0.15)
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
             : AppColors.card,
         borderRadius: BorderRadius.circular(10),
       ),
@@ -271,7 +271,7 @@ class _UserScreenState extends State<UserScreen> {
         style: TextStyle(
           fontSize: 11,
           color: highlight
-              ? AppColors.primary
+              ? Theme.of(context).colorScheme.primary
               : AppColors.textSecondary,
         ),
       ),
@@ -315,8 +315,8 @@ class _UserScreenState extends State<UserScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('确定',
-                style: TextStyle(color: AppColors.primary)),
+            child: Text('确定',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),

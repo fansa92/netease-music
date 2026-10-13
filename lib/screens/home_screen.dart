@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: RefreshIndicator(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         onRefresh: _refresh,
         child: FutureBuilder<_HomeData>(
           future: _future,
@@ -161,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader(BuildContext context) {
     return SliverToBoxAdapter(
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFB32B26), Color(0xFFD33A31)],
             begin: Alignment.topLeft,
@@ -262,11 +262,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(e.icon,
-                            color: AppColors.primary, size: 24),
+                            color: Theme.of(context).colorScheme.primary, size: 24),
                       ),
                       const SizedBox(height: 6),
                       Text(e.label,
@@ -518,8 +518,8 @@ class _BannerCarouselState extends State<_BannerCarousel> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(12),
                                 bottomRight: Radius.circular(12),
@@ -550,7 +550,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               margin: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
                 color: i == _current
-                    ? AppColors.primary
+                    ? Theme.of(context).colorScheme.primary
                     : Colors.white24,
                 borderRadius: BorderRadius.circular(3),
               ),

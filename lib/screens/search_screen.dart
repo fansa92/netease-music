@@ -163,7 +163,7 @@ class _SearchScreenState extends State<SearchScreen>
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: i < 3 ? AppColors.primary : AppColors.textSecondary,
+                  color: i < 3 ? Theme.of(context).colorScheme.primary : AppColors.textSecondary,
                 ),
               ),
             ),
@@ -231,9 +231,9 @@ class _SearchScreenState extends State<SearchScreen>
     return ListView(
       children: [
         ListTile(
-          leading: const Icon(Icons.search, color: AppColors.primary),
+          leading: Icon(Icons.search, color: Theme.of(context).colorScheme.primary),
           title: Text('搜索：$kw',
-              style: const TextStyle(color: AppColors.primary)),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           onTap: () => _submit(kw),
         ),
         const Divider(),
@@ -298,9 +298,9 @@ class _SearchScreenState extends State<SearchScreen>
         TabBar(
           controller: _tabController,
           tabs: _tabs.map((t) => Tab(text: t)).toList(),
-          labelColor: AppColors.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.primary,
+          indicatorColor: Theme.of(context).colorScheme.primary,
         ),
         Expanded(
           child: TabBarView(

@@ -94,8 +94,8 @@ class _SongListScreenState extends State<SongListScreen> {
           return Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.play_circle_filled,
-                    color: AppColors.primary, size: 30),
+                leading: Icon(Icons.play_circle_filled,
+                    color: Theme.of(context).colorScheme.primary, size: 30),
                 title: Text('播放全部（${songs.length}）',
                     style:
                         const TextStyle(fontWeight: FontWeight.w600)),

@@ -52,10 +52,13 @@ class NeteaseMusicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // M3 动态取色：SettingsService 在 Android 12+ 上从系统壁纸取色，
+    // 不可用或关闭时 buildTheme 用默认网易云红配色
+    final settings = context.watch<SettingsService>();
     return MaterialApp(
       title: '云音乐',
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
+      theme: buildTheme(dynamicScheme: settings.effectiveScheme),
       home: const AppShell(),
       onGenerateRoute: (settings) {
         final args = settings.arguments;
@@ -68,8 +71,7 @@ class NeteaseMusicApp extends StatelessWidget {
           case '/playlist':
             if (args is int) {
               return MaterialPageRoute(
-                builder: (_) =>
-                    PlaylistDetailScreen(playlistId: args),
+                builder: (_) => PlaylistDetailScreen(playlistId: args),
               );
             }
           case '/artist':
@@ -79,8 +81,7 @@ class NeteaseMusicApp extends StatelessWidget {
               );
             }
           case '/artists':
-            return MaterialPageRoute(
-                builder: (_) => const ArtistsScreen());
+            return MaterialPageRoute(builder: (_) => const ArtistsScreen());
           case '/album':
             if (args is int) {
               return MaterialPageRoute(
@@ -93,11 +94,9 @@ class NeteaseMusicApp extends StatelessWidget {
               builder: (_) => const PlayerScreen(),
             );
           case '/login':
-            return MaterialPageRoute(
-                builder: (_) => const LoginScreen());
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
           case '/settings':
-            return MaterialPageRoute(
-                builder: (_) => const SettingsScreen());
+            return MaterialPageRoute(builder: (_) => const SettingsScreen());
           case '/comments':
             if (args is Song) {
               return MaterialPageRoute(
@@ -105,8 +104,7 @@ class NeteaseMusicApp extends StatelessWidget {
               );
             }
           case '/toplist':
-            return MaterialPageRoute(
-                builder: (_) => const ToplistScreen());
+            return MaterialPageRoute(builder: (_) => const ToplistScreen());
           case '/songlist':
             if (args is Map) {
               return MaterialPageRoute(
@@ -134,11 +132,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;
 
-  final _tabs = const [
-    HomeScreen(),
-    SearchScreen(),
-    UserScreen(),
-  ];
+  final _tabs = const [HomeScreen(), SearchScreen(), UserScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +140,7 @@ class _AppShellState extends State<AppShell> {
       body: Column(
         children: [
           Expanded(
-            child: IndexedStack(
-              index: _tabIndex,
-              children: _tabs,
-            ),
+            child: IndexedStack(index: _tabIndex, children: _tabs),
           ),
           const MiniPlayer(),
         ],

@@ -75,9 +75,9 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen>
                         Tab(text: '专辑'),
                         Tab(text: '简介'),
                       ],
-                      labelColor: AppColors.primary,
+                      labelColor: Theme.of(context).colorScheme.primary,
                       unselectedLabelColor: AppColors.textSecondary,
-                      indicatorColor: AppColors.primary,
+                      indicatorColor: Theme.of(context).colorScheme.primary,
                     ),
                     Expanded(
                       child: TabBarView(

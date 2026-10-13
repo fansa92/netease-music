@@ -16,6 +16,7 @@ dependencies:
   cached_network_image: ^3.4.1
   shared_preferences: ^2.5.3
   crypto: ^3.0.6
+  dynamic_color: ^2.1.0
 
 dev_dependencies:
   flutter_test:
