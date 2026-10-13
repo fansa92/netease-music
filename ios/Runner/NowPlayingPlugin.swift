@@ -36,6 +36,15 @@ class NowPlayingPlugin: NSObject, FlutterPlugin {
   }
 
   private func updateNowPlaying(_ args: [String: Any]) {
+    // 确保音频会话激活，否则锁屏不会显示
+    do {
+      let session = AVAudioSession.sharedInstance()
+      try session.setCategory(.playback, mode: .default)
+      try session.setActive(true)
+    } catch {
+      // audioplayers 也会管理会话，失败时忽略
+    }
+
     var info: [String: Any] = [:]
     if let title = args["title"] as? String, !title.isEmpty {
       info[MPMediaItemPropertyTitle] = title

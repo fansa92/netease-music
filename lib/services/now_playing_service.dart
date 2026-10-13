@@ -50,21 +50,25 @@ class NowPlayingService {
   Future<void> _update() async {
     final song = player.current;
     if (song == null) return;
-    try {
-      final pos = player.position;
-      await _channel.invokeMethod('update', {
-        'title': song.name,
-        'artist': song.artistNames,
-        'album': song.album?.name ?? '',
-        'artworkUrl': song.picUrl,
-        'duration': player.duration?.inMilliseconds != null
-            ? player.duration!.inMilliseconds / 1000.0
-            : 0.0,
-        'position': pos.inMilliseconds / 1000.0,
-        'isPlaying': player.playing,
-      });
-    } catch (_) {
-      // 原生通道不可用时忽略（非 iOS / 旧包）
+    // 重试 3 次，应对原生插件尚未就绪的情况
+    for (var i = 0; i < 3; i++) {
+      try {
+        final pos = player.position;
+        await _channel.invokeMethod('update', {
+          'title': song.name,
+          'artist': song.artistNames,
+          'album': song.album?.name ?? '',
+          'artworkUrl': song.picUrl,
+          'duration': player.duration?.inMilliseconds != null
+              ? player.duration!.inMilliseconds / 1000.0
+              : 0.0,
+          'position': pos.inMilliseconds / 1000.0,
+          'isPlaying': player.playing,
+        });
+        return; // 成功则退出
+      } catch (_) {
+        if (i < 2) await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
+      }
     }
   }
 
