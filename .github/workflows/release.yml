@@ -156,9 +156,15 @@ jobs:
           sudo apt-get install -y --allow-downgrades \
             libgstreamer1.0-0 libgstreamer-plugins-base1.0-0
           # runner 预装的 libunwind-*-dev（LLVM 组件）与 libunwind-dev 互斥，先卸掉
-          sudo apt-get remove -y libunwind-14-dev libunwind-15-dev \
-            libunwind-16-dev libunwind-17-dev libunwind-18-dev \
-            libunwind-19-dev libunwind-20-dev 2>/dev/null || true
+          for p in $(dpkg -l | grep -o 'libunwind-[0-9]*-dev' | sort -u); do
+            sudo apt-get remove -y "$p" || true
+          done
+          # 修复可能坏掉的 apt 状态
+          sudo dpkg --configure -a || true
+          sudo apt-get install -f -y || true
+          # 取消可能被 hold 的包
+          sudo apt-mark unhold libunwind8 libunwind-dev \
+            libgstreamer1.0-0 libgstreamer1.0-dev 2>/dev/null || true
           sudo apt-get install -y --allow-downgrades \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
