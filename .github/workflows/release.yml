@@ -37,9 +37,7 @@ jobs:
       - name: Prepare self-signed keystore
         # 想要固定签名以便覆盖安装升级：把 keystore 以 base64 存到
         # Secrets.ANDROID_KEYSTORE_BASE64，并设置 ANDROID_KEYSTORE_PASSWORD /
-        # ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS；否则每次 CI 临时生成
-        # （临时生成的 keystore 每次都不同，无法覆盖安装升级）。
-        # 固定自签变量：alias=cmsplayer，store/key 密码=134679。
+        # ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS；否则每次 CI 临时生成。
         run: |
           if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
@@ -48,12 +46,12 @@ jobs:
             KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}"
           else
             keytool -genkeypair -keystore android/app/release.keystore \
-              -alias cmsplayer -keyalg RSA -keysize 2048 -validity 10950 \
-              -storepass 134679 -keypass 134679 \
-              -dname "CN=cmsplayer, OU=Music, O=cmsplayer, L=Unknown, ST=Unknown, C=CN"
-            STORE_PASS=134679
-            KEY_PASS=134679
-            KEY_ALIAS=cmsplayer
+              -alias selfsigned -keyalg RSA -keysize 2048 -validity 10950 \
+              -storepass android -keypass android \
+              -dname "CN=SelfSigned, OU=Dev, O=Dev, L=Unknown, ST=Unknown, C=CN"
+            STORE_PASS=android
+            KEY_PASS=android
+            KEY_ALIAS=selfsigned
           fi
           cat > android/key.properties <<EOF
           storePassword=$STORE_PASS
