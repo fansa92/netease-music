@@ -129,98 +129,98 @@ jobs:
           name: macos-dmg
           path: dist/*.dmg
 
-  # ---------------- Linux ----------------
-  linux:
-    name: Linux packages (deb/rpm/AppImage/pacman)
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: Install build dependencies
-        run: |
-          for i in 1 2 3; do
-            sudo apt-get update && break
-            echo "apt-get update failed, retry $i"
-            sleep 10
-          done
-          sudo apt-get install -y --allow-downgrades \
-            clang cmake ninja-build pkg-config \
-            libgtk-3-dev liblzma-dev libstdc++-12-dev rpm
-          # 先把 gstreamer 运行库升到最新，再装 -dev 包，避免版本不一致
-          sudo apt-get install -y --allow-downgrades \
-            libgstreamer1.0-0 libgstreamer-plugins-base1.0-0
-          # runner 预装的 libunwind-*-dev（LLVM 组件）与 libunwind-dev 互斥，先卸掉
-          for p in $(dpkg -l | grep -o 'libunwind-[0-9]*-dev' | sort -u); do
-            sudo apt-get remove -y "$p" || true
-          done
-          # 修复可能坏掉的 apt 状态
-          sudo dpkg --configure -a || true
-          sudo apt-get install -f -y || true
-          # 取消可能被 hold 的包
-          sudo apt-mark unhold libunwind8 libunwind-dev \
-            libgstreamer1.0-0 libgstreamer1.0-dev 2>/dev/null || true
-          # libunwind-dev 与 runner 预装包冲突导致 apt 无解：
-          # 用 equivs 建空包满足依赖（构建实际不需要 libunwind 头文件）
-          sudo apt-get install -y equivs
-          mkdir -p /tmp/dummy && cd /tmp/dummy
-          printf 'Section: libdevel\nPriority: optional\nStandards-Version: 3.9.2\nPackage: libunwind-dev\nVersion: 1.3.2-2build2\nArchitecture: all\nDescription: Dummy libunwind-dev to satisfy gstreamer deps\n' > libunwind-dev
-          equivs-build libunwind-dev
-          sudo dpkg -i libunwind-dev_1.3.2-2build2_all.deb
-          cd -
-          sudo apt-get install -y --allow-downgrades \
-            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-
-      - run: flutter pub get
-      - run: flutter build linux --release
-
-      - name: Install nfpm
-        run: |
-          TAG=$(curl -sfL https://api.github.com/repos/goreleaser/nfpm/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-          echo "nfpm $TAG"
-          curl -sfL "https://github.com/goreleaser/nfpm/releases/download/${TAG}/nfpm_${TAG#v}_amd64.deb" -o /tmp/nfpm.deb
-          sudo dpkg -i /tmp/nfpm.deb
-
-      - name: Build deb / rpm / pacman
-        run: |
-          mkdir -p dist
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then VERSION="${GITHUB_REF#refs/tags/v}"; else VERSION="0.0.0-dev"; fi
-          echo "VERSION=$VERSION" | tee -a "$GITHUB_ENV"
-          VERSION="$VERSION" nfpm package --config packaging/linux/nfpm.yaml --packager deb --target dist/
-          VERSION="$VERSION" nfpm package --config packaging/linux/nfpm.yaml --packager rpm --target dist/
-          VERSION="$VERSION" nfpm package --config packaging/linux/nfpm.yaml --packager archlinux --target dist/
-
-      - name: Build AppImage
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: 1
-        run: |
-          curl -sfL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o /tmp/appimagetool
-          chmod +x /tmp/appimagetool
-          rm -rf AppDir
-          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/512x512/apps
-          cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
-          cp packaging/linux/netease-music.desktop AppDir/usr/share/applications/
-          cp packaging/linux/icon.png AppDir/usr/share/icons/hicolor/512x512/apps/netease-music.png
-          cat > AppDir/AppRun <<'EOF'
-          #!/bin/sh
-          HERE="$(dirname "$(readlink -f "$0")")"
-          exec "$HERE/usr/bin/netease_music" "$@"
-          EOF
-          chmod +x AppDir/AppRun
-          ln -sf usr/share/applications/netease-music.desktop AppDir/netease-music.desktop
-          ln -sf usr/share/icons/hicolor/512x512/apps/netease-music.png AppDir/netease-music.png
-          /tmp/appimagetool AppDir "dist/netease-music-${VERSION}-x86_64.AppImage"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-packages
-          path: dist/*
-
+#  # ---------------- Linux ----------------
+#  linux:
+#    name: Linux packages (deb/rpm/AppImage/pacman)
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - uses: subosito/flutter-action@v2
+#        with:
+#          channel: stable
+#          flutter-version: ${{ env.FLUTTER_VERSION }}
+#          cache: true
+#
+#      - name: Install build dependencies
+#        run: |
+#          for i in 1 2 3; do
+#            sudo apt-get update && break
+#            echo "apt-get update failed, retry $i"
+#            sleep 10
+#          done
+#          sudo apt-get install -y --allow-downgrades \
+#            clang cmake ninja-build pkg-config \
+#            libgtk-3-dev liblzma-dev libstdc++-12-dev rpm
+#          # 先把 gstreamer 运行库升到最新，再装 -dev 包，避免版本不一致
+#          sudo apt-get install -y --allow-downgrades \
+#            libgstreamer1.0-0 libgstreamer-plugins-base1.0-0
+#          # runner 预装的 libunwind-*-dev（LLVM 组件）与 libunwind-dev 互斥，先卸掉
+#          for p in $(dpkg -l | grep -o 'libunwind-[0-9]*-dev' | sort -u); do
+#            sudo apt-get remove -y "$p" || true
+#          done
+#          # 修复可能坏掉的 apt 状态
+#          sudo dpkg --configure -a || true
+#          sudo apt-get install -f -y || true
+#          # 取消可能被 hold 的包
+#          sudo apt-mark unhold libunwind8 libunwind-dev \
+#            libgstreamer1.0-0 libgstreamer1.0-dev 2>/dev/null || true
+#          # libunwind-dev 与 runner 预装包冲突导致 apt 无解：
+#          # 用 equivs 建空包满足依赖（构建实际不需要 libunwind 头文件）
+#          sudo apt-get install -y equivs
+#          mkdir -p /tmp/dummy && cd /tmp/dummy
+#          printf 'Section: libdevel\nPriority: optional\nStandards-Version: 3.9.2\nPackage: libunwind-dev\nVersion: 1.3.2-2build2\nArchitecture: all\nDescription: Dummy libunwind-dev to satisfy gstreamer deps\n' > libunwind-dev
+#          equivs-build libunwind-dev
+#          sudo dpkg -i libunwind-dev_1.3.2-2build2_all.deb
+#          cd -
+#          sudo apt-get install -y --allow-downgrades \
+#            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+#
+#      - run: flutter pub get
+#      - run: flutter build linux --release
+#
+#      - name: Install nfpm
+#        run: |
+#          TAG=$(curl -sfL https://api.github.com/repos/goreleaser/nfpm/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+#          echo "nfpm $TAG"
+#          curl -sfL "https://github.com/goreleaser/nfpm/releases/download/${TAG}/nfpm_${TAG#v}_amd64.deb" -o /tmp/nfpm.deb
+#          sudo dpkg -i /tmp/nfpm.deb
+#
+#      - name: Build deb / rpm / pacman
+#        run: |
+#          mkdir -p dist
+#          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then VERSION="${GITHUB_REF#refs/tags/v}"; else VERSION="0.0.0-dev"; fi
+#          echo "VERSION=$VERSION" | tee -a "$GITHUB_ENV"
+#          VERSION="$VERSION" nfpm package --config packaging/linux/nfpm.yaml --packager deb --target dist/
+#          VERSION="$VERSION" nfpm package --config packaging/linux/nfpm.yaml --packager rpm --target dist/
+#          VERSION="$VERSION" nfpm package --config packaging/linux/nfpm.yaml --packager archlinux --target dist/
+#
+#      - name: Build AppImage
+#        env:
+#          APPIMAGE_EXTRACT_AND_RUN: 1
+#        run: |
+#          curl -sfL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o /tmp/appimagetool
+#          chmod +x /tmp/appimagetool
+#          rm -rf AppDir
+#          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/512x512/apps
+#          cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
+#          cp packaging/linux/netease-music.desktop AppDir/usr/share/applications/
+#          cp packaging/linux/icon.png AppDir/usr/share/icons/hicolor/512x512/apps/netease-music.png
+#          cat > AppDir/AppRun <<'EOF'
+#          #!/bin/sh
+#          HERE="$(dirname "$(readlink -f "$0")")"
+#          exec "$HERE/usr/bin/netease_music" "$@"
+#          EOF
+#          chmod +x AppDir/AppRun
+#          ln -sf usr/share/applications/netease-music.desktop AppDir/netease-music.desktop
+#          ln -sf usr/share/icons/hicolor/512x512/apps/netease-music.png AppDir/netease-music.png
+#          /tmp/appimagetool AppDir "dist/netease-music-${VERSION}-x86_64.AppImage"
+#
+#      - uses: actions/upload-artifact@v4
+#        with:
+#          name: linux-packages
+#          path: dist/*
+#
   # ---------------- Windows ----------------
   windows:
     name: Windows ZIP
@@ -252,7 +252,7 @@ jobs:
   # ---------------- Release ----------------
   release:
     name: Publish GitHub Release
-    needs: [android, ios, macos, linux, windows]
+    needs: [android, ios, macos, windows]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
