@@ -90,7 +90,9 @@ if (intOf(d['code'])!= 200) throw Exception('操作失败');
 
 Future<SearchResult> search(String keywords, int type,
 {int limit = 30, int offset = 0}) async {
-final d = await api.get('/search', {
+// 歌曲搜索用 /cloudsearch：/search 返回的 album 对象没有 picUrl，封面显示不了
+final endpoint = type == 1 ? '/cloudsearch' : '/search';
+final d = await api.get(endpoint, {
 'keywords': keywords,
 'type': type,
 'limit': limit,
@@ -121,16 +123,21 @@ if (ab is List) {
 albums =
 ab.whereType<Map<String, dynamic>>().map(AlbumMini.fromJson).toList();
 }
+final songCount = intOf(r['songCount']);
+// /cloudsearch 不返回 hasMore，用总数推算
+final hasMore = type == 1
+? offset + songs.length < songCount
+: r['hasMore'] == true;
 return SearchResult(
 songs: songs,
-songCount: intOf(r['songCount']),
+songCount: songCount,
 playlists: playlists,
 playlistCount: intOf(r['playlistCount']),
 artists: artists,
 artistCount: intOf(r['artistCount']),
 albums: albums,
 albumCount: intOf(r['albumCount']),
-hasMore: r['hasMore'] == true,
+hasMore: hasMore,
 );
 }
 

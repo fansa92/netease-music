@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../core/utils.dart';
 import '../models/models.dart';
 import '../services/auth_service.dart';
 import '../services/music_service.dart';
@@ -364,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: artists.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 16),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, i) {
           final a = artists[i];
           return GestureDetector(
@@ -383,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.textSecondary),
                           )
                         : CoverImage(
-                            url: '${a.picUrl}?param=128y128',
+                            url: thumb(a.picUrl, 128),
                             size: 64,
                             radius: 32),
                   ),

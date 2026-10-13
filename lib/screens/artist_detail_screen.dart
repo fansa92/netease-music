@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../core/utils.dart';
 import '../models/models.dart';
 import '../services/music_service.dart';
 import '../services/player_service.dart';
@@ -101,7 +102,7 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen>
         children: [
           ClipOval(
               child: CoverImage(
-                  url: '${detail.picUrl}?param=200y200',
+                  url: thumb(detail.picUrl, 200),
                   size: 88,
                   radius: 44)),
           const SizedBox(width: 16),
@@ -254,7 +255,7 @@ class _ArtistsScreenState extends State<ArtistsScreen> {
                   children: [
                     ClipOval(
                         child: CoverImage(
-                            url: '${a.picUrl}?param=200y200',
+                            url: thumb(a.picUrl, 200),
                             size: 88,
                             radius: 44)),
                     const SizedBox(height: 8),

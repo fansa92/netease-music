@@ -8,6 +8,12 @@ String httpsUrl(String? url) {
   return url;
 }
 
+/// 网易云图片裁剪参数：空 URL 或已带参数时原样返回，避免拼出坏链接
+String thumb(String url, int size) {
+  if (url.isEmpty || url.contains('?')) return url;
+  return '$url?param=${size}y$size';
+}
+
 String formatPlayCount(int count) {
   if (count >= 100000000) {
     return '${(count / 100000000).toStringAsFixed(1)}亿';
