@@ -44,8 +44,8 @@ git tag v1.0.0 && git push origin v1.0.0
 
 说明：
 
-- **Android 自签**：CI 默认每次临时生成 keystore 自签。如需固定签名以便覆盖安装升级，把 keystore 转 base64 后存到仓库 Secrets：
-  `ANDROID_KEYSTORE_BASE64`，以及 `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_PASSWORD` / `ANDROID_KEY_ALIAS`。
+- **Android 自签**：CI 默认每次临时生成 keystore 自签（固定变量：alias=`cmsplayer`，store/key 密码=`134679`）。注意临时生成的 keystore 每次都不同，APK 无法覆盖安装升级；如需固定签名，把 keystore 转 base64 后存到仓库 Secrets：
+  `ANDROID_KEYSTORE_BASE64`，以及 `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_PASSWORD` / `ANDROID_KEY_ALIAS`（对应值：`134679` / `134679` / `cmsplayer`）。
 - **iOS IPA 未签名**：GitHub 无法做苹果官方签名，产物需用 AltStore / TrollStore / 自签工具安装到设备。
 - Linux 包通过 [nfpm](https://github.com/goreleaser/nfpm) 打 deb/rpm/pacman，AppImage 用 appimagetool，配置在 `packaging/linux/`。
 - workflow 文件：`.github/workflows/release.yml`，Flutter 版本 pin 在 `env.FLUTTER_VERSION`。
