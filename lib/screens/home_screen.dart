@@ -161,11 +161,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    // 头部跟随主题色（不再硬编码网易云红）
+    final primary = cs.primary;
+    final primaryDark = HSLColor.fromColor(primary)
+        .withLightness((HSLColor.fromColor(primary).lightness - 0.12)
+            .clamp(0.0, 1.0))
+        .toColor();
     return SliverToBoxAdapter(
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFB32B26), Color(0xFFD33A31)],
+            colors: [primaryDark, primary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

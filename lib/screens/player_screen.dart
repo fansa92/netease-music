@@ -68,14 +68,35 @@ class PlayerScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Expanded(
-                      child: PageView(
-                        children: [
-                          // 封面页支持下滑手势关闭（仅移动端）
-                          _SwipeDismiss(
-                            child: _ArtworkView(song: song),
-                          ),
-                          const _LyricView(),
-                        ],
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          // 桌面端宽屏：左封面右歌词；移动端：滑动切换
+                          final isWide =
+                              constraints.maxWidth >= 900 || _isDesktop;
+                          if (isWide) {
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: _ArtworkView(song: song),
+                                ),
+                                const VerticalDivider(
+                                    width: 1, color: Colors.white12),
+                                const Expanded(
+                                  child: _LyricView(),
+                                ),
+                              ],
+                            );
+                          }
+                          return PageView(
+                            children: [
+                              // 封面页支持下滑手势关闭（仅移动端）
+                              _SwipeDismiss(
+                                child: _ArtworkView(song: song),
+                              ),
+                              const _LyricView(),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     _buildErrorHint(player),
