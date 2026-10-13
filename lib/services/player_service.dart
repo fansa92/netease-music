@@ -135,20 +135,27 @@ class PlayerService extends ChangeNotifier {
         } catch (_) {
           url = null;
         }
-        if (url != null && url.isNotEmpty) {
-          try {
-            await player.setUrl(url);
-            await player.play();
-            errorMessage = null;
-            notifyListeners();
-            return;
-          } catch (_) {
-            url = null;
-          }
+        if (url == null || url.isEmpty) {
+          // 接口没返回播放链接：未登录 / 无版权 / 需 VIP
+          _failed.add(song.id);
+          errorMessage = '《${song.name}》暂无播放版权，已跳过';
+          notifyListeners();
+          n = _nextIndex(n);
+          attempts++;
+          continue;
         }
-        _failed.add(song.id);
-        errorMessage = '《${song.name}》暂无播放版权，已跳过';
-        notifyListeners();
+        try {
+          await player.setUrl(url);
+          await player.play();
+          errorMessage = null;
+          notifyListeners();
+          return;
+        } catch (e) {
+          // 链接拿到了，但播放器加载失败：和"暂无版权"区分开
+          _failed.add(song.id);
+          errorMessage = '《${song.name}》播放器加载失败：$e';
+          notifyListeners();
+        }
         n = _nextIndex(n);
         attempts++;
       }
