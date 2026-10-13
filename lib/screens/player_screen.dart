@@ -565,17 +565,11 @@ class _VolumeRowState extends State<_VolumeRow> {
   @override
   void initState() {
     super.initState();
-    _initVolume();
-  }
-
-  Future<void> _initVolume() async {
+    // 监听系统音量变化（fetchInitialVolume 取初始值；音量键/控制中心变化时同步）
     try {
-      final v = await VolumeController.instance.getVolume();
-      if (mounted) setState(() => _volume = v.clamp(0.0, 1.0));
-      // 监听系统音量变化（音量键/控制中心），保持同步
-      VolumeController.instance.listener((v) {
+      VolumeController.instance.addListener((v) {
         if (mounted) setState(() => _volume = v.clamp(0.0, 1.0));
-      });
+      }, fetchInitialVolume: true);
     } catch (_) {
       // 不支持的平台忽略
     }
