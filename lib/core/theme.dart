@@ -27,12 +27,25 @@ ThemeData buildTheme() {
         color: Colors.white,
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.bg,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
       elevation: 8,
+      indicatorColor: AppColors.primary.withValues(alpha: 0.25),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        final selected =
+            states.contains(WidgetState.selected);
+        return TextStyle(
+          fontSize: 12,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          color: selected ? AppColors.primary : Colors.grey,
+        );
+      }),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        final selected =
+            states.contains(WidgetState.selected);
+        return IconThemeData(
+            color: selected ? AppColors.primary : Colors.grey);
+      }),
     ),
     cardTheme: const CardThemeData(
       color: AppColors.card,

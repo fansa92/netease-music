@@ -63,7 +63,16 @@ class _UserScreenState extends State<UserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(
+        title: const Text('我的'),
+        actions: [
+          IconButton(
+            tooltip: '设置',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
+        ],
+      ),
       body: Consumer<AuthService>(
         builder: (context, auth, _) {
           if (auth.loading) {

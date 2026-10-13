@@ -2,8 +2,8 @@
 
 基于 [Binaryify/NeteaseCloudMusicApi](https://gitlab.com/Binaryify/NeteaseCloudMusicApi) 文档开发的第三方网易云音乐客户端。
 
-- API 地址：`https://netease-cloudmusic-api-rosy.vercel.app`
-- API 文档：`https://netease-cloudmusic-api-rosy.vercel.app/docs#/`
+- API 地址：`https://sg.fansa.nyc.mn/netease`（可在 App 内「我的 → 设置」里修改）
+- API 文档：`https://sg.fansa.nyc.mn/netease/docs#/`
 - UI：深色主题 + 网易云红，Material 3
 
 ## 功能

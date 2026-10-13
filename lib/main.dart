@@ -12,12 +12,14 @@ import 'screens/login_screen.dart';
 import 'screens/player_screen.dart';
 import 'screens/playlist_detail_screen.dart';
 import 'screens/search_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/song_list_screen.dart';
 import 'screens/toplist_screen.dart';
 import 'screens/user_screen.dart';
 import 'services/auth_service.dart';
 import 'services/music_service.dart';
 import 'services/player_service.dart';
+import 'services/settings_service.dart';
 import 'widgets/mini_player.dart';
 
 void main() async {
@@ -27,6 +29,8 @@ void main() async {
   final music = MusicService(api);
   final auth = AuthService(api);
   final player = PlayerService(music);
+  final settings = SettingsService(api);
+  await settings.init();
   await auth.init();
 
   runApp(
@@ -36,6 +40,7 @@ void main() async {
         Provider<MusicService>.value(value: music),
         ChangeNotifierProvider<AuthService>.value(value: auth),
         ChangeNotifierProvider<PlayerService>.value(value: player),
+        ChangeNotifierProvider<SettingsService>.value(value: settings),
       ],
       child: const NeteaseMusicApp(),
     ),
@@ -90,6 +95,9 @@ class NeteaseMusicApp extends StatelessWidget {
           case '/login':
             return MaterialPageRoute(
                 builder: (_) => const LoginScreen());
+          case '/settings':
+            return MaterialPageRoute(
+                builder: (_) => const SettingsScreen());
           case '/comments':
             if (args is Song) {
               return MaterialPageRoute(
@@ -146,23 +154,23 @@ class _AppShellState extends State<AppShell> {
           const MiniPlayer(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tabIndex,
-        onTap: (i) => setState(() => _tabIndex = i),
-        items: const [
-          BottomNavigationBarItem(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tabIndex,
+        onDestinationSelected: (i) => setState(() => _tabIndex = i),
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home),
             label: '发现',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.search_outlined),
-            activeIcon: Icon(Icons.search),
+            selectedIcon: Icon(Icons.search),
             label: '搜索',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+            selectedIcon: Icon(Icons.person),
             label: '我的',
           ),
         ],

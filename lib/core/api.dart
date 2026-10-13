@@ -7,18 +7,28 @@ import 'package:dio/dio.dart';
 ///    而网易云 API 代理支持直接传 cookie 参数；
 /// 2. 每次请求自动带上 `timestamp`，避免命中服务端 2 分钟缓存。
 class ApiClient {
-  static const String baseUrl =
-      'https://netease-cloudmusic-api-rosy.vercel.app';
+  /// 默认接口地址（可在「我的 → 设置」里修改）。
+  static const String defaultBaseUrl = 'https://sg.fansa.nyc.mn/netease';
 
   final Dio dio;
   String? cookie;
 
   ApiClient()
       : dio = Dio(BaseOptions(
-          baseUrl: baseUrl,
+          baseUrl: defaultBaseUrl,
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 25),
         ));
+
+  /// 运行时切换接口地址，立即生效（自动去掉末尾的 `/`）。
+  void setBaseUrl(String url) {
+    url = url.trim();
+    while (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    if (url.isEmpty) return;
+    dio.options.baseUrl = url;
+  }
 
   Future<Map<String, dynamic>> get(String path,
       [Map<String, dynamic>? params]) async {
