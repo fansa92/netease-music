@@ -404,13 +404,27 @@ class _PlayerScreenState extends State<PlayerScreen>
                 if (player.errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      player.errorMessage!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.error,
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      children: [
+                        Text(
+                          player.errorMessage!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        // 未登录且因无链接被跳过时，给快捷登录入口
+                        if (player.errorMessage!.contains('需登录') &&
+                            !context
+                                .watch<AuthService>()
+                                .loggedIn)
+                          TextButton(
+                            onPressed: () => Navigator.of(context)
+                                .pushNamed('/login'),
+                            child: const Text('去登录'),
+                          ),
+                      ],
                     ),
                   ),
                 const Spacer(flex: 3),
