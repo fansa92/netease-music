@@ -188,8 +188,11 @@ class PlayerService extends ChangeNotifier {
           continue;
         }
         try {
-          await _player.setPlaybackRate(_speed);
           await _player.play(UrlSource(url));
+          // 倍速在 play 成功后设置，失败不影响播放（单独 try）
+          try {
+            await _player.setPlaybackRate(_speed);
+          } catch (_) {}
           errorMessage = null;
           notifyListeners();
           // 预加载下一首的 URL，切歌时更快
