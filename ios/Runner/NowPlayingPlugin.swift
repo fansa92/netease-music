@@ -30,9 +30,28 @@ class NowPlayingPlugin: NSObject, FlutterPlugin {
     case "clear":
       MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
       result(nil)
+    case "updateState":
+      if let args = call.arguments as? [String: Any] {
+        updatePlaybackState(args)
+      }
+      result(nil)
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  /// 只更新播放状态（rate）和位置，不碰元数据。
+  /// iOS 会按 rate 自动推进锁屏进度条。
+  private func updatePlaybackState(_ args: [String: Any]) {
+    guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else {
+      return
+    }
+    let isPlaying = (args["isPlaying"] as? Bool) ?? true
+    if let position = args["position"] as? Double, position >= 0 {
+      info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = position
+    }
+    info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+    MPNowPlayingInfoCenter.default().nowPlayingInfo = info
   }
 
   private func updateNowPlaying(_ args: [String: Any]) {

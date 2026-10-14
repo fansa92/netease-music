@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
@@ -16,17 +16,17 @@ const Map<String, String> qualityLevels = {
   'lossless': '无损',
 };
 
-/// 播放器：播放队列、播放模式、歌词同步、音质切换。
+/// 网易云播放器：歌曲队列、播放模式、倍速、歌词同步、音质切换。
 ///
-/// 不可播放的歌曲（无版权/需 VIP/链接失效）会自动跳过，
-/// 一轮都播不了时给出提示而不是死循环。
+/// 底层逻辑采用 xyzfm 的播放器逻辑：
+/// - 取不到 URL 的歌曲自动跳过，一轮都播不了时给出提示。
+/// - 顺序播放到最后一首时停住（不循环）。
+/// - 切歌/暂停时不再做云端进度上报（网易云无此接口）。
 class PlayerService extends ChangeNotifier {
   final MusicService music;
   final AudioPlayer _player = AudioPlayer();
   final Random _random = Random();
 
-  // audioplayers 是事件驱动：用本地字段缓存播放状态/进度/时长，
-  // 对外保持原来的同步 getter 接口。
   bool _playing = false;
   Duration _position = Duration.zero;
   Duration? _duration;
@@ -34,6 +34,9 @@ class PlayerService extends ChangeNotifier {
   List<Song> queue = [];
   int index = -1;
   PlayMode mode = PlayMode.loop;
+
+  double _speed = 1.0;
+  double get speed => _speed;
 
   List<LyricLine> lyrics = [];
   List<LyricLine> transLyrics = [];
@@ -45,9 +48,8 @@ class PlayerService extends ChangeNotifier {
   final Set<int> _failed = {};
   bool _busy = false;
 
-  /// 倍速（xyzfm 逻辑）：0.5x ~ 3.0x，持久化
-  double _speed = 1.0;
-  double get speed => _speed;
+  /// URL 缓存：预加载下一首，切歌时直接用
+  final Map<int, String> _urlCache = {};
 
   PlayerService(this.music) {
     _player.onPlayerStateChanged.listen((state) {
@@ -59,7 +61,6 @@ class PlayerService extends ChangeNotifier {
       _duration = d;
       notifyListeners();
     });
-    // 进度变化时刷新歌词高亮 / 进度条
     _player.onPositionChanged.listen((pos) {
       _position = pos;
       notifyListeners();
@@ -77,18 +78,6 @@ class PlayerService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {}
-  }
-
-  /// 倍速 0.5x ~ 3.0x，持久化（xyzfm 逻辑）
-  Future<void> setSpeed(double s) async {
-    s = s.clamp(0.5, 3.0);
-    _speed = s;
-    await _player.setPlaybackRate(s);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble('play_speed', s);
-    } catch (_) {}
-    notifyListeners();
   }
 
   Song? get current =>
@@ -156,6 +145,8 @@ class PlayerService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------- 播放实现 ----------
+
   Future<void> _playAt(int i) async {
     if (queue.isEmpty || _busy) return;
     _busy = true;
@@ -220,16 +211,6 @@ class PlayerService extends ChangeNotifier {
     }
   }
 
-  int _nextIndex(int from) {
-    if (queue.isEmpty) return 0;
-    if (mode == PlayMode.shuffle) return _random.nextInt(queue.length);
-    final n = from + 1;
-    return n >= queue.length ? 0 : n;
-  }
-
-  /// URL 缓存：预加载下一首，切歌时直接用
-  final Map<int, String> _urlCache = {};
-
   /// 后台预加载下一首的播放 URL（不阻塞当前播放）
   void _prefetchNext(int currentIndex) {
     if (queue.isEmpty) return;
@@ -244,6 +225,13 @@ class PlayerService extends ChangeNotifier {
     }).catchError((_) {});
   }
 
+  int _nextIndex(int from) {
+    if (queue.isEmpty) return 0;
+    if (mode == PlayMode.shuffle) return _random.nextInt(queue.length);
+    final n = from + 1;
+    return n >= queue.length ? 0 : n;
+  }
+
   int _prevIndex(int from) {
     if (queue.isEmpty) return 0;
     if (mode == PlayMode.shuffle) return _random.nextInt(queue.length);
@@ -255,6 +243,11 @@ class PlayerService extends ChangeNotifier {
     if (mode == PlayMode.single && current != null) {
       await _player.seek(Duration.zero);
       await _player.resume();
+    } else if (mode == PlayMode.sequence &&
+        index >= 0 &&
+        index == queue.length - 1) {
+      // 顺序播放到最后一首：停住（xyzfm 逻辑）
+      await _player.stop();
     } else {
       await next();
     }
@@ -293,6 +286,18 @@ class PlayerService extends ChangeNotifier {
   Future<void> seek(Duration position) => _player.seek(position);
 
   Future<void> setVolume(double v) => _player.setVolume(v.clamp(0.0, 1.0));
+
+  /// 倍速 0.5x ~ 3.0x，持久化（xyzfm 逻辑）
+  Future<void> setSpeed(double s) async {
+    s = s.clamp(0.5, 3.0);
+    _speed = s;
+    await _player.setPlaybackRate(s);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('play_speed', s);
+    } catch (_) {}
+    notifyListeners();
+  }
 
   void cycleMode() {
     mode = switch (mode) {
