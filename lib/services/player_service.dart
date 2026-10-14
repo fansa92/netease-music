@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 import 'music_service.dart';
@@ -44,6 +45,10 @@ class PlayerService extends ChangeNotifier {
   final Set<int> _failed = {};
   bool _busy = false;
 
+  /// 倍速（xyzfm 逻辑）：0.5x ~ 3.0x，持久化
+  double _speed = 1.0;
+  double get speed => _speed;
+
   PlayerService(this.music) {
     _player.onPlayerStateChanged.listen((state) {
       _playing = state == PlayerState.playing;
@@ -59,6 +64,31 @@ class PlayerService extends ChangeNotifier {
       _position = pos;
       notifyListeners();
     });
+    _loadSpeed();
+  }
+
+  Future<void> _loadSpeed() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getDouble('play_speed') ?? 1.0;
+      if (s >= 0.5 && s <= 3.0) {
+        _speed = s;
+        await _player.setPlaybackRate(s);
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  /// 倍速 0.5x ~ 3.0x，持久化（xyzfm 逻辑）
+  Future<void> setSpeed(double s) async {
+    s = s.clamp(0.5, 3.0);
+    _speed = s;
+    await _player.setPlaybackRate(s);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('play_speed', s);
+    } catch (_) {}
+    notifyListeners();
   }
 
   Song? get current =>
@@ -167,6 +197,7 @@ class PlayerService extends ChangeNotifier {
           continue;
         }
         try {
+          await _player.setPlaybackRate(_speed);
           await _player.play(UrlSource(url));
           errorMessage = null;
           notifyListeners();

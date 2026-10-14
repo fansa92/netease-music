@@ -377,12 +377,33 @@ class PlayerScreen extends StatelessWidget {
   }
 
   /// Apple Music 风格控制区：大按钮无底圈
+  static const _speeds = [1.0, 1.25, 1.5, 2.0, 0.75];
+
+  void _cycleSpeed(BuildContext context, PlayerService player) {
+    final idx = _speeds.indexOf(player.speed);
+    final next = _speeds[(idx + 1) % _speeds.length];
+    player.setSpeed(next);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('倍速 ${next}x'),
+        duration: const Duration(milliseconds: 800),
+      ),
+    );
+  }
+
   Widget _buildControls(BuildContext context, PlayerService player) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // 倍速（xyzfm 逻辑）
+          TextButton(
+            onPressed: () => _cycleSpeed(context, player),
+            child: Text('${player.speed}x',
+                style:
+                    const TextStyle(fontSize: 14, color: Colors.white70)),
+          ),
           IconButton(
             icon: Icon(_modeIcon(player.mode),
                 size: 24, color: Colors.white70),
