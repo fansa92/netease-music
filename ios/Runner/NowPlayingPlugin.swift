@@ -8,6 +8,8 @@ import MediaPlayer
 class NowPlayingPlugin: NSObject, FlutterPlugin {
   private var channel: FlutterMethodChannel?
   private var artworkTask: URLSessionDataTask?
+  private var cachedArtworkUrl: String?
+  private var cachedArtwork: MPMediaItemArtwork?
 
   static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
@@ -83,19 +85,37 @@ class NowPlayingPlugin: NSObject, FlutterPlugin {
     let isPlaying = (args["isPlaying"] as? Bool) ?? true
     info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
 
+    // 封面：用缓存的（同 URL 不重复下载），一次写完避免竞态
+    let artworkUrl = args["artworkUrl"] as? String ?? ""
+    if !artworkUrl.isEmpty,
+       artworkUrl == cachedArtworkUrl,
+       let cached = cachedArtwork {
+      info[MPMediaItemPropertyArtwork] = cached
+    }
+
+    // 防御：空信息不写，避免误清空锁屏
+    if info.isEmpty { return }
     MPNowPlayingInfoCenter.default().nowPlayingInfo = info
 
-    // 封面异步下载后补上
-    if let urlString = args["artworkUrl"] as? String,
-       !urlString.isEmpty,
-       let url = URL(string: urlString) {
+    // 封面异步下载：URL 变化时才下载，下载完只更新封面
+    if !artworkUrl.isEmpty, artworkUrl != cachedArtworkUrl,
+       let url = URL(string: artworkUrl) {
       artworkTask?.cancel()
-      artworkTask = URLSession.shared.dataTask(with: url) { data, _, _ in
-        guard let data = data, let image = UIImage(data: data) else { return }
+      let targetUrl = artworkUrl
+      artworkTask = URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+        guard let self = self,
+              let data = data,
+              let image = UIImage(data: data) else { return }
         DispatchQueue.main.async {
+          // 只有当前歌曲还是这个 URL 时才更新，防止旧下载覆盖新歌
+          let currentTitle = MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyTitle] as? String
+          let newTitle = args["title"] as? String
+          guard currentTitle == newTitle else { return }
+          let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+          self.cachedArtworkUrl = targetUrl
+          self.cachedArtwork = artwork
           var updated = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-          updated[MPMediaItemPropertyArtwork] =
-            MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+          updated[MPMediaItemPropertyArtwork] = artwork
           MPNowPlayingInfoCenter.default().nowPlayingInfo = updated
         }
       }
