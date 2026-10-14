@@ -168,20 +168,25 @@ class PlayerService extends ChangeNotifier {
         _loadLyrics(song.id);
 
         String? url;
+        String? urlError;
         // 优先用预加载的 URL
         if (_urlCache.containsKey(song.id)) {
           url = _urlCache.remove(song.id);
         } else {
           try {
             url = await music.songUrl(song.id, level: quality);
-          } catch (_) {
+          } catch (e) {
             url = null;
+            urlError = e.toString();
           }
         }
         if (url == null || url.isEmpty) {
-          // 接口没返回播放链接：未登录 / 无版权 / 需 VIP
+          // 接口没返回播放链接：未登录 / 无版权 / 需 VIP / 网络异常
           _failed.add(song.id);
-          errorMessage = '《${song.name}》暂无播放版权，已跳过';
+          final reason = urlError != null
+              ? '获取链接异常[$quality]：$urlError'
+              : '接口未返回播放链接[$quality]，可能无版权/需VIP/需登录';
+          errorMessage = '《${song.name}》已跳过：$reason';
           notifyListeners();
           n = _nextIndex(n);
           attempts++;
