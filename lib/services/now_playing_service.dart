@@ -41,7 +41,10 @@ class NowPlayingService {
   void _onPlayerChanged() {
     final song = player.current;
     if (song == null) {
-      _channel.invokeMethod('clear');
+      // 防御：只有真正停止时才清，避免中间态误杀锁屏信息
+      if (!player.playing) {
+        _channel.invokeMethod('clear');
+      }
       _lastSongId = null;
       _lastPlaying = null;
       return;
@@ -99,6 +102,9 @@ class NowPlayingService {
         break;
       case 'onPause':
         if (player.playing) await player.toggle();
+        break;
+      case 'onToggle':
+        await player.toggle();
         break;
       case 'onNext':
         await player.next();
