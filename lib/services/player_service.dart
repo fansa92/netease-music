@@ -44,6 +44,18 @@ class PlayerService extends ChangeNotifier {
 
   String quality = 'standard';
   String? errorMessage;
+  DateTime _lastErrorTime = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// 设置错误信息（3 秒内不覆盖，方便看清跳过原因）
+  void _setError(String msg) {
+    final now = DateTime.now();
+    if (now.difference(_lastErrorTime).inSeconds >= 3 ||
+        errorMessage == null) {
+      errorMessage = msg;
+      _lastErrorTime = now;
+      notifyListeners();
+    }
+  }
 
   final Set<int> _failed = {};
   bool _busy = false;
@@ -186,8 +198,7 @@ class PlayerService extends ChangeNotifier {
           final reason = urlError != null
               ? '获取链接异常[$quality]：$urlError'
               : '接口未返回播放链接[$quality]，可能无版权/需VIP/需登录';
-          errorMessage = '《${song.name}》已跳过：$reason';
-          notifyListeners();
+          _setError('《${song.name}》已跳过：$reason');
           n = _nextIndex(n);
           attempts++;
           continue;
@@ -206,14 +217,12 @@ class PlayerService extends ChangeNotifier {
         } catch (e) {
           // 链接拿到了，但播放器加载失败：和"暂无版权"区分开
           _failed.add(song.id);
-          errorMessage = '《${song.name}》播放器加载失败：$e';
-          notifyListeners();
+          _setError('《${song.name}》播放器加载失败：$e');
         }
         n = _nextIndex(n);
         attempts++;
       }
-      errorMessage = '队列中没有可播放的歌曲（可能需要登录或 VIP）';
-      notifyListeners();
+      _setError('队列中没有可播放的歌曲（可能需要登录或 VIP）');
     } finally {
       _busy = false;
     }
