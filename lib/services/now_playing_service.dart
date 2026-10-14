@@ -12,9 +12,6 @@ class NowPlayingService {
   static const _channel =
       MethodChannel('com.netease.music/nowplaying');
 
-  /// 全局单例，供播放页等需要手动刷新的地方调用
-  static NowPlayingService? instance;
-
   final PlayerService player;
   StreamSubscription? _posSub;
   Timer? _debounce;
@@ -23,7 +20,6 @@ class NowPlayingService {
 
   NowPlayingService(this.player) {
     if (!Platform.isIOS) return;
-    instance = this;
     _channel.setMethodCallHandler(_onNativeCall);
     player.addListener(_onPlayerChanged);
     // 进度变化时节流更新（锁屏进度条）
@@ -81,9 +77,6 @@ class NowPlayingService {
       }
     }
   }
-
-  /// 公开的手动刷新（播放页打开时调用）
-  Future<void> refresh() => _update();
 
   Future<void> _onNativeCall(MethodCall call) async {
     switch (call.method) {

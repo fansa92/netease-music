@@ -9,7 +9,6 @@ import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/auth_service.dart';
 import '../services/music_service.dart';
-import '../services/now_playing_service.dart';
 import '../services/player_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/cover_image.dart';
@@ -34,8 +33,6 @@ class PlayerScreen extends StatelessWidget {
             body: Center(child: Text('暂无播放内容')),
           );
         }
-        // 播放页打开时刷新一次锁屏信息（iOS）
-        NowPlayingService.instance?.refresh();
         return Scaffold(
           extendBodyBehindAppBar: true,
           appBar: AppBar(
