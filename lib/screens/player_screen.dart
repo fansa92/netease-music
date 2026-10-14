@@ -7,6 +7,7 @@ import 'package:volume_controller/volume_controller.dart';
 import '../models/models.dart';
 import '../services/auth_service.dart';
 import '../services/music_service.dart';
+import '../services/now_playing_service.dart';
 import '../services/player_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/cover_image.dart';
@@ -38,6 +39,10 @@ class _PlayerScreenState extends State<PlayerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // 播放页打开时刷一次锁屏信息，防止系统侧失效
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NowPlayingService.instance?.refresh();
+    });
   }
 
   @override

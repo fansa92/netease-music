@@ -19,6 +19,9 @@ class NowPlayingService {
   static const _channel =
       MethodChannel('com.netease.music/nowplaying');
 
+  /// 单例，供播放页打开时手动刷新
+  static NowPlayingService? instance;
+
   final PlayerService player;
   StreamSubscription? _playingSub;
   int? _lastSongId;
@@ -26,10 +29,14 @@ class NowPlayingService {
 
   NowPlayingService(this.player) {
     if (!Platform.isIOS) return;
+    instance = this;
     _channel.setMethodCallHandler(_onNativeCall);
     player.addListener(_onPlayerChanged);
     _onPlayerChanged();
   }
+
+  /// 公开刷新：切歌/播放页打开等关键时机调用
+  Future<void> refresh() => _updateFull();
 
   void _onPlayerChanged() {
     final song = player.current;
